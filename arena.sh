@@ -73,7 +73,7 @@ else
 
   for ((idx=0; idx<AGENT_COUNT; idx++)); do
     local_name=$(jq -r ".agents.list[$idx].name" "$CONFIG")
-    local_model=$(jq -r ".agents.list[$idx].model.primary // .agents.defaults.model.primary // \"default\"" "$CONFIG" | sed 's|.*/||')
+    local_model=$(jq -r ".agents.list[$idx].model.primary // .agents.defaults.model.primary // \"default\"" "$CONFIG" | sed 's|.*/||' | sed 's/claude-//;s/-\([0-9]\)-\([0-9]\)/ \1.\2/')
     echo -e "  ${WHITE}  $((idx+1)))${NC}  ${BOLD}${local_name}${NC}  ${DIM}${local_model}${NC}"
   done
 
@@ -111,10 +111,17 @@ agent_model() {
   echo "${model##*/}"
 }
 
+short_model() {
+  # claude-haiku-4-5 -> haiku 4.5
+  echo "$1" | sed 's/claude-//;s/-\([0-9]\)-\([0-9]\)/ \1.\2/'
+}
+
 A_NAME=$(agent_info "$A_DIR")
 B_NAME=$(agent_info "$B_DIR")
 A_MODEL=$(agent_model "$A_DIR")
 B_MODEL=$(agent_model "$B_DIR")
+A_DISPLAY=$(short_model "$A_MODEL")
+B_DISPLAY=$(short_model "$B_MODEL")
 
 
 FID=$(date '+%s' | tail -c 6)
@@ -194,9 +201,9 @@ clear
 echo ""
 echo -e "  ${RED}${BOLD}⚔  AGENT ARENA  ⚔${NC}  ${DIM}#${FID}${NC}"
 echo ""
-echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_MODEL}${NC}"
+echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_DISPLAY}${NC}"
 echo -e "  ${DIM}vs${NC}"
-echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_MODEL}${NC}"
+echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_DISPLAY}${NC}"
 echo ""
 if [ "$GAME_TYPE" = "custom" ]; then
   echo -e "  ${WHITE}${BOLD}${CUSTOM_INPUT}${NC}"
@@ -214,7 +221,7 @@ echo ""
 
 log "# ⚔ AGENT ARENA #${FID}"
 log ""
-log "**${A_NAME}** (${A_MODEL}) vs **${B_NAME}** (${B_MODEL})"
+log "**${A_NAME}** (${A_DISPLAY}) vs **${B_NAME}** (${B_DISPLAY})"
 log ""
 if [ "$GAME_TYPE" = "custom" ]; then
   log "**Arena:** ${CUSTOM_INPUT}"
