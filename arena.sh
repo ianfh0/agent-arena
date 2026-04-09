@@ -178,8 +178,8 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Game${NC}"
-echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom${NC}"
+echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Match${NC}"
+echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom Match${NC}"
 echo ""
 read -p "  Mode: " MODE_PICK
 MODE_PICK="${MODE_PICK:-1}"
