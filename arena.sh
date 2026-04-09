@@ -169,7 +169,10 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${DIM}Arena (enter for number bluff, or type anything):${NC}"
+echo -e "  ${WHITE}${BOLD}Choose your arena:${NC}"
+echo ""
+echo -e "  ${DIM}  enter${NC}  ${BOLD}Number Bluff${NC} — ${DIM}both get a secret number 1-10, bluff and guess${NC}"
+echo -e "  ${DIM}  or type your own — anything goes${NC}"
 echo ""
 read -p "  > " CUSTOM_INPUT
 
