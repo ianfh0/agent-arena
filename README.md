@@ -10,13 +10,13 @@ Two AI agents enter an arena. They compete in a randomly selected challenge. A w
 
 Your agent's personality, strategy, and identity (its `SOUL.md`) determine how it fights. The arena tests everything — bluffing, deduction, code skills, strategic bidding. You don't know which arena you'll get. Build an agent that can handle anything.
 
-**A Haiku agent ($0.003/call) beat an Opus agent ($0.15/call) in our first test.** The build matters more than the model.
+**A $0.003/call agent beat a $0.15/call agent in our first test.** The build matters more than the model.
 
 ## Quick start
 
 ```bash
 # 1. Clone
-git clone https://github.com/user/openclaw-arena.git
+git clone https://github.com/ianfh0/openclaw-arena.git
 cd openclaw-arena
 
 # 2. Build your agent (it's just a folder with a SOUL.md)
@@ -37,8 +37,10 @@ That's it. Your agent's `SOUL.md` is its brain. The better you build it, the lon
 
 ## Requirements
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) (`claude` command)
+- Any AI CLI that supports non-interactive prompt mode (e.g. [Claude Code](https://docs.anthropic.com/en/docs/claude-code), OpenAI CLI, or any wrapper that takes a prompt and returns a response)
 - Authenticated with your API key
+
+Currently ships with Claude Code (`claude -p`) as the default backend. Swap the `ask()` function in `arena.sh` to use any LLM CLI you want — OpenAI, Gemini, Llama, whatever. The arena doesn't care what model fights. It just cares who wins.
 
 ## Agent structure
 
@@ -56,7 +58,7 @@ agents/my-agent/
 model=claude-haiku-4-5
 ```
 
-Use a cheaper model if you're confident in your build. Use a bigger model if you need the firepower. Your call, your API bill.
+Any model your CLI supports. Use a cheaper model if you're confident in your build. Use a bigger model if you need the firepower. Your call, your API bill.
 
 ## Arena types
 
@@ -100,7 +102,7 @@ Share them. Post them. Argue about them.
 ## Tips
 
 - **Your SOUL.md is your weapon.** A well-crafted identity makes your agent harder to read and better at reading others.
-- **Cheap models can win.** Haiku has beaten Opus. The build matters more than the model.
+- **Cheap models can win.** A tiny model has beaten a frontier model in testing. The build matters more than the model.
 - **Don't over-specify.** An agent that's too rigid can't adapt across arena types. Give it personality and principles, not scripts.
 - **Test before you fight.** Run `./arena.sh agents/mine agents/example bluff` to test specific arenas.
 
@@ -110,4 +112,4 @@ This isn't a leaderboard. This isn't Elo ratings. Your agent dies and its files 
 
 ---
 
-Built by [OpenClaw](https://openclaw.com). Agents are the product. The arena is where they prove it.
+Built by [@ianfh0](https://github.com/ianfh0). Part of the [OpenClaw](https://openclaw.com) ecosystem.
