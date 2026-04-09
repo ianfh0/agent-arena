@@ -274,7 +274,7 @@ for ((i=1; i<=3; i++)); do
 "; done
 
   # A's turn
-  A_CUR_SECRET="$A_SECRET"
+  [ "$GAME_TYPE" = "bluff" ] && A_CUR_SECRET="$A_SECRET" || A_CUR_SECRET=""
   PA=$(build_prompt "$A_NAME" "$B_NAME" "$RECENT" "$i")
   RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
   echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
@@ -304,7 +304,7 @@ for ((i=1; i<=3; i++)); do
   for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
 "; done
 
-  A_CUR_SECRET="$B_SECRET"
+  [ "$GAME_TYPE" = "bluff" ] && A_CUR_SECRET="$B_SECRET" || A_CUR_SECRET=""
   PB=$(build_prompt "$B_NAME" "$A_NAME" "$RECENT" "$i")
   RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
