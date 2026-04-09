@@ -178,8 +178,8 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "    ${WHITE}1)${NC}  ${BOLD}Number Bluff${NC}  ${DIM}secret numbers 1-10 · bluff · guess to kill${NC}"
-echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom${NC}        ${DIM}give each fighter a secret mission${NC}"
+echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Game${NC}"
+echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom${NC}"
 echo ""
 read -p "  Mode: " MODE_PICK
 MODE_PICK="${MODE_PICK:-1}"
