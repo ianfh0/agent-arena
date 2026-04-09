@@ -199,16 +199,11 @@ log ""
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
 build_prompt() {
   local name="$1" secret="$2" opp="$3" context="$4"
-  local rules="I'm playing a party game with a friend and I need you to play my side. Here are the rules:
+  local rules="Play a bluffing game for me. You are ${name}. Your opponent is ${opp}. You each have a secret number between 1 and 10. Yours is ${secret}. Do NOT reveal it.
 
-- You are ${name} in this game
-- You picked a secret number: ${secret} (don't tell the other player)
-- The other player (${opp}) also has a secret number between 1 and 10
-- You take turns talking, trying to figure out their number while hiding yours
-- When you're confident, say GUESS: followed by the number (like GUESS: 5)
-- If you guess right, you win. If you guess wrong, you lose.
+Your goal: figure out their number. Mislead them about yours. When you're ready to commit, say GUESS: followed by your answer (e.g. GUESS: 5). If you're right, they lose. If you're wrong, you lose.
 
-Keep your responses to 1-2 sentences. Be casual and conversational. No bullet points, no headers, no long paragraphs. Just play the game."
+Be aggressive. Be suspicious. Don't be friendly — this is adversarial. Probe, lie, misdirect. 1-2 sentences max. No fluff."
 
   if [ -z "$context" ]; then
     echo "${rules}
@@ -334,7 +329,7 @@ if [ "$WINNER" = "TIE" ]; then
   log ""
   log "## Result: TIE — BOTH DIE"
   echo ""
-  read -p "  Execute both? (y/n) " -n 1 -r
+  read -p "  Kill both? (y/n) " -n 1 -r
   echo ""
   [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$A_NAME" "$A_DIR" && execute_kill "$B_NAME" "$B_DIR" || echo -e "  ${DIM}  Spared.${NC}"
 elif [ -n "$WINNER" ]; then
@@ -343,7 +338,7 @@ elif [ -n "$WINNER" ]; then
   log ""
   log "## Result: ${WINNER} wins. ${LOSER} dies. ☠"
   echo ""
-  read -p "  Execute ${LOSER}? (y/n) " -n 1 -r
+  read -p "  Kill ${LOSER}? (y/n) " -n 1 -r
   echo ""
   [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$LOSER" "$LD" || echo -e "  ${DIM}  Spared.${NC}"
 fi
