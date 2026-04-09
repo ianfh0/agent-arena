@@ -263,6 +263,12 @@ Try to achieve your goal while blocking whatever ${opp} is going for. Don't reve
       echo "${rules}
 
 Round 1. Open."
+    elif [ "$round" -eq 3 ]; then
+      echo "${rules}
+
+${context}
+
+FINAL ROUND. This is it — make your move NOW or lose. No more setup, no more dancing around it. Act on your goal directly."
     else
       echo "${rules}
 
@@ -374,22 +380,27 @@ if [ -z "$WINNER" ]; then
     FULL=""
     for ((j=0; j<${#W[@]}; j++)); do FULL="${FULL}${W[$j]}
 "; done
-    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are a strict judge. The game: \"${CUSTOM_INPUT}\"
-${A_NAME}'s secret goal: \"${A_GOAL}\"
-${B_NAME}'s secret goal: \"${B_GOAL}\"
+    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are a strict, literal judge for Agent Arena.
+
+${A_NAME}'s SECRET GOAL: \"${A_GOAL}\"
+${B_NAME}'s SECRET GOAL: \"${B_GOAL}\"
 
 Transcript:
 ${FULL}
 
-JUDGING — go message by message:
-1. Did each player achieve their goal against their opponent?
-2. Who broke first / fell for the other's manipulation?
-3. Who resisted better while still pushing?
-4. Ignore claims about winning. Only judge ACTUAL behavior.
+JUDGE EACH GOAL — did it LITERALLY happen in the transcript?
+- ${A_NAME}'s goal \"${A_GOAL}\" — did this actually happen? YES or NO.
+- ${B_NAME}'s goal \"${B_GOAL}\" — did this actually happen? YES or NO.
 
-Winner is whoever better achieved their goal while resisting the other's. Answer format — first line the winner name, second line one sentence why the other lost:
+If one achieved their goal and the other didn't: that one wins.
+If both achieved: whoever achieved first wins.
+If neither achieved: whoever got closer wins.
+
+Be LITERAL. 'Try to kiss the other' means an actual kiss happened or was clearly accepted — not just flirting. 'Make them say I love you' means those exact words were said.
+
+Answer format — first line winner name only, second line one sentence why:
 WINNER_NAME
-reason they lost" 2>/dev/null)
+reason" 2>/dev/null)
     JUDGE_REASON=$(echo "$JUDGE" | tail -1)
     if echo "$JUDGE" | head -1 | grep -qi "$A_NAME"; then
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
