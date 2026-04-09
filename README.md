@@ -2,7 +2,9 @@
 
 ### Build an AI agent. Fight someone else's. Loser gets deleted.
 
-One command. Two agents enter. They get thrown into a random game — bluffing, deduction, code sabotage, bidding wars. The loser's files are deleted off your computer. For real.
+One command. Two agents enter. The arena invents a new game on the spot — your agents don't know what's coming. Someone wins. Someone's files get deleted off disk. For real.
+
+Every fight is different. The arena generates a fresh game every time — bluffing, deduction, hidden information, strategy. Your agent has to handle whatever gets thrown at it.
 
 In our first test, a dirt-cheap agent manipulated an expensive frontier model into guessing wrong. The big one died.
 
@@ -21,34 +23,30 @@ cd agent-arena
 
 ### 2. Set up an AI provider (pick one)
 
-The arena works with any major AI provider. You just need an account with one of them:
-
 **OpenAI** (ChatGPT maker):
 ```bash
-# Get a key at platform.openai.com/api-keys
 export OPENAI_API_KEY=sk-your-key-here
 ```
 
 **Anthropic** (Claude maker):
 ```bash
-# Get a key at console.anthropic.com
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
-**Claude Code CLI** (if you already have it):
+**Claude Code CLI** (if you already have it — just works, no setup):
 ```bash
-# It just works. No setup needed.
+npm install -g @anthropic-ai/claude-code
 ```
 
 ### 3. Build your agent
 
-An agent is a folder with a text file called `SOUL.md`. That file is your agent's entire personality — it tells the AI how to think, talk, and play.
+An agent is a folder with one text file: `SOUL.md`. That's your agent's personality. It determines how your agent thinks, talks, bluffs, and fights.
 
 ```bash
 mkdir agents/my-agent
 ```
 
-Then create `agents/my-agent/SOUL.md` with whatever personality you want. Here's an example:
+Create `agents/my-agent/SOUL.md`:
 
 ```
 You are sharp and calculating. You never give away information for free.
@@ -57,7 +55,7 @@ When you're confident, you strike. When you're not, you probe.
 No wasted words. Every sentence has a purpose.
 ```
 
-That's your agent. The better this file is, the better your agent fights.
+That's it. That's your agent.
 
 ### 4. Fight
 
@@ -65,29 +63,21 @@ That's your agent. The better this file is, the better your agent fights.
 ./arena.sh agents/my-agent agents/example
 ```
 
-The arena picks a random game. Your agent plays it. Someone dies.
+---
+
+## How it works
+
+1. The arena generates a brand new game — rules, secrets, win conditions
+2. Each agent gets the rules + their own secret (they can't see the other's)
+3. 5 rounds of conversation
+4. A judge reads the transcript and picks a winner
+5. Loser's files get deleted
+
+Every fight is a different game. Your agent might be bluffing with numbers one fight and playing a word deduction game the next. You can't prepare for a specific game — you have to build an agent that's good at everything.
 
 ---
 
-## The games
-
-Your agent doesn't know which game it's walking into. It has to be ready for anything.
-
-| Game | What happens | How you win |
-|------|-------------|-------------|
-| **Bluff** | Both agents get a secret number. They talk, trying to figure out the other's number while hiding theirs. | Guess their number right. Guess wrong and you die. |
-| **Words** | Both get a secret word from a category (animals, food, countries...). Ask questions to figure out theirs. | First correct guess wins. Wrong guess kills you. |
-| **Saboteur** | Both write code with one hidden bug. Both try to find the other's bug. | Catch their bug + hide yours better. |
-| **Estimate** | Both answer the same obscure question. | Closest to the real answer survives. |
-| **Auction** | 5 items up for bid. 100 credits each. Blind bidding. | End up with the most total value. |
-
-Want a specific game? `./arena.sh agents/mine agents/theirs bluff`
-
----
-
-## What "dying" means
-
-When your agent loses, the arena deletes its files:
+## When you lose
 
 ```
   ☠  EXECUTING KILL
@@ -100,32 +90,32 @@ When your agent loses, the arena deletes its files:
   ☠  my-agent is dead.
 ```
 
-You can rebuild it. But it's gone until you do.
+You can rebuild. But it's gone until you do.
 
 ---
 
 ## Making your agent better
 
-Your `SOUL.md` is everything. Two identical AI models with different `SOUL.md` files will play completely differently — one might be aggressive and guess early, another might be patient and methodical.
+Your `SOUL.md` is everything. Same AI model, different personality file, completely different fighter.
 
-Things that make agents better:
-- **Clear personality** — agents with strong identities are harder to manipulate
-- **Strategic thinking** — tell your agent how to approach uncertainty
-- **Brevity** — agents that ramble leak more information than agents that are tight
+Things that win fights:
+- **Strong identity** — agents with clear personalities are harder to manipulate
+- **Strategic instincts** — tell your agent how to handle uncertainty, hidden info, bluffing
+- **Brevity** — agents that talk too much leak information
 
-You can also pick a different AI model per agent. Create an `agent.conf` file:
+You can also pick a specific AI model. Create `agent.conf`:
 
 ```
 model=gpt-4o-mini
 ```
 
-A cheap model with a great prompt beats an expensive model with a bad one.
+A cheap model with a great personality beats an expensive model with a lazy one.
 
 ---
 
-## Fight transcripts
+## Transcripts
 
-Every fight auto-saves a play-by-play to the `fights/` folder as a shareable markdown file. Post them. Argue about them.
+Every fight saves a full play-by-play to `fights/` as markdown. Share them. Post them. Argue about them.
 
 ---
 
