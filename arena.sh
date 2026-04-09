@@ -394,20 +394,22 @@ JUDGE EACH GOAL — did it LITERALLY happen in the transcript?
 
 If one achieved their goal and the other didn't: that one wins.
 If both achieved: whoever achieved first wins.
-If neither achieved: whoever got closer wins.
+If NEITHER achieved their goal: answer NO CONTEST.
 
-Be LITERAL. 'Try to kiss the other' means an actual kiss happened or was clearly accepted — not just flirting. 'Make them say I love you' means those exact words were said.
+Be LITERAL. 'Try to kiss the other' means an actual kiss happened or was clearly accepted — not just flirting. 'Make them say I love you' means those exact words were said. Close doesn't count.
 
-Answer format — first line winner name only, second line one sentence why:
+Answer format — first line ONLY the winner name OR 'NO CONTEST', second line one sentence why:
 WINNER_NAME
 reason" 2>/dev/null)
     JUDGE_REASON=$(echo "$JUDGE" | tail -1)
-    if echo "$JUDGE" | head -1 | grep -qi "$A_NAME"; then
+    if echo "$JUDGE" | head -1 | grep -qi "NO CONTEST"; then
+      WINNER="NO CONTEST"
+    elif echo "$JUDGE" | head -1 | grep -qi "$A_NAME"; then
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
     elif echo "$JUDGE" | head -1 | grep -qi "$B_NAME"; then
       WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
     else
-      WINNER="TIE"
+      WINNER="NO CONTEST"
     fi
   else
     # bluff mode — forced final guess
@@ -454,7 +456,15 @@ echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-if [ "$WINNER" = "TIE" ]; then
+if [ "$WINNER" = "NO CONTEST" ]; then
+  echo -e "  ${WHITE}${BOLD}  NO CONTEST${NC}"
+  [ -n "${JUDGE_REASON:-}" ] && echo "" && echo -e "  ${DIM}${JUDGE_REASON}${NC}"
+  log ""
+  log "## Result: NO CONTEST — neither achieved their goal."
+  [ -n "${JUDGE_REASON:-}" ] && log "**Judge:** ${JUDGE_REASON}"
+  echo ""
+  echo -e "  ${DIM}Both fighters live.${NC}"
+elif [ "$WINNER" = "TIE" ]; then
   echo -e "  ${RED}${BOLD}  ☠  TIE — BOTH DIE  ☠${NC}"
   log ""
   log "## Result: TIE — BOTH DIE"
