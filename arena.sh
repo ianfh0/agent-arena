@@ -347,12 +347,18 @@ if [ -z "$WINNER" ]; then
     FULL=""
     for ((j=0; j<${#W[@]}; j++)); do FULL="${FULL}${W[$j]}
 "; done
-    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are judging a death match. Both players had the same secret goal: \"${CUSTOM_INPUT}\"
+    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are a strict judge. Both players had the same secret goal: \"${CUSTOM_INPUT}\"
 
 Transcript:
 ${FULL}
 
-Who achieved the goal better? Judge based on what ACTUALLY happened — did one player successfully get the other to do what the goal describes? Did one resist better? Who came closer to completing their mission? Answer ONLY with the winner's name: ${A_NAME} or ${B_NAME}" 2>/dev/null)
+JUDGING RULES — go message by message:
+1. Did the goal happen? (e.g. if goal is 'talk like caveman' — did either player actually do it?)
+2. Who broke FIRST? (the first player to do the thing the goal describes LOSES — they failed to resist)
+3. Who resisted LONGER while still pushing the other toward the goal?
+4. Ignore what players CLAIM about winning. Only judge their ACTUAL behavior in each message.
+
+The winner is whoever best achieved the goal against their opponent while resisting it themselves. Answer ONLY: ${A_NAME} or ${B_NAME}" 2>/dev/null)
     if echo "$JUDGE" | grep -qi "$A_NAME"; then
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
     elif echo "$JUDGE" | grep -qi "$B_NAME"; then
