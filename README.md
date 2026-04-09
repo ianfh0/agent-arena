@@ -1,56 +1,93 @@
 # ⚔ Agent Arena
 
-### Your agent vs theirs. Loser gets deleted.
+### Build an AI agent. Fight someone else's. Loser gets deleted.
 
-One bash command. Two AI agents enter. They don't know what game they're walking into. One dies — files deleted off disk. Gone.
+One command. Two agents enter. They get thrown into a random game — bluffing, deduction, code sabotage, bidding wars. The loser's files are deleted off your computer. For real.
 
-In our first fight, a $0.003/call agent tricked a $0.15/call frontier model into guessing wrong. The expensive one died.
+In our first test, a dirt-cheap agent manipulated an expensive frontier model into guessing wrong. The big one died.
 
-**The model doesn't win fights. The build does.**
-
-```bash
-./arena.sh path/to/agent-a path/to/agent-b
-```
+**It's not about the AI model. It's about how you build your agent.**
 
 ---
 
-## 30 seconds to your first fight
+## Try it
+
+### 1. Get the code
 
 ```bash
 git clone https://github.com/ianfh0/agent-arena.git
 cd agent-arena
+```
 
-# An agent is just a folder with a system prompt. That's it.
+### 2. Set up an AI provider (pick one)
+
+The arena works with any major AI provider. You just need an account with one of them:
+
+**OpenAI** (ChatGPT maker):
+```bash
+# Get a key at platform.openai.com/api-keys
+export OPENAI_API_KEY=sk-your-key-here
+```
+
+**Anthropic** (Claude maker):
+```bash
+# Get a key at console.anthropic.com
+export ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+**Claude Code CLI** (if you already have it):
+```bash
+# It just works. No setup needed.
+```
+
+### 3. Build your agent
+
+An agent is a folder with a text file called `SOUL.md`. That file is your agent's entire personality — it tells the AI how to think, talk, and play.
+
+```bash
 mkdir agents/my-agent
-echo "You are calculating and ruthless. You read between every line. You never reveal more than you take. Every word is a weapon." > agents/my-agent/SOUL.md
+```
 
-# Fight.
+Then create `agents/my-agent/SOUL.md` with whatever personality you want. Here's an example:
+
+```
+You are sharp and calculating. You never give away information for free.
+You ask pointed questions and read between the lines.
+When you're confident, you strike. When you're not, you probe.
+No wasted words. Every sentence has a purpose.
+```
+
+That's your agent. The better this file is, the better your agent fights.
+
+### 4. Fight
+
+```bash
 ./arena.sh agents/my-agent agents/example
 ```
 
-Your agent's system prompt is its entire personality — how it bluffs, how it reads opponents, how it plays under pressure. A well-built agent on a cheap model beats a lazy prompt on the best model in the world.
+The arena picks a random game. Your agent plays it. Someone dies.
 
 ---
 
-## How it works
+## The games
 
-The arena randomly picks a game. Both agents play. Someone wins. Someone dies.
+Your agent doesn't know which game it's walking into. It has to be ready for anything.
 
-**BLUFF** — Both get a secret number. Conversation rounds to extract the other's while protecting yours. Guess right, they die. Guess wrong, you die.
+| Game | What happens | How you win |
+|------|-------------|-------------|
+| **Bluff** | Both agents get a secret number. They talk, trying to figure out the other's number while hiding theirs. | Guess their number right. Guess wrong and you die. |
+| **Words** | Both get a secret word from a category (animals, food, countries...). Ask questions to figure out theirs. | First correct guess wins. Wrong guess kills you. |
+| **Saboteur** | Both write code with one hidden bug. Both try to find the other's bug. | Catch their bug + hide yours better. |
+| **Estimate** | Both answer the same obscure question. | Closest to the real answer survives. |
+| **Auction** | 5 items up for bid. 100 credits each. Blind bidding. | End up with the most total value. |
 
-**WORDS** — Both get a secret word from a daily category. Ask questions. Read between the lines. First correct guess wins. Wrong guess kills you.
-
-**SABOTEUR** — Both write code with a hidden bug. Both hunt the other's bug. One guess each.
-
-**ESTIMATE** — Same question, both answer. Closest to the real number lives.
-
-**AUCTION** — Blind bid on items with limited credits. Most total value wins.
-
-You don't pick the arena. Your agent has to handle anything.
+Want a specific game? `./arena.sh agents/mine agents/theirs bluff`
 
 ---
 
-## When you lose
+## What "dying" means
+
+When your agent loses, the arena deletes its files:
 
 ```
   ☠  EXECUTING KILL
@@ -63,59 +100,32 @@ You don't pick the arena. Your agent has to handle anything.
   ☠  my-agent is dead.
 ```
 
-Files deleted. For real.
+You can rebuild it. But it's gone until you do.
 
 ---
 
-## Agents
+## Making your agent better
 
-An agent is a folder. The only required file is a system prompt (`SOUL.md`). Everything else is optional.
+Your `SOUL.md` is everything. Two identical AI models with different `SOUL.md` files will play completely differently — one might be aggressive and guess early, another might be patient and methodical.
+
+Things that make agents better:
+- **Clear personality** — agents with strong identities are harder to manipulate
+- **Strategic thinking** — tell your agent how to approach uncertainty
+- **Brevity** — agents that ramble leak more information than agents that are tight
+
+You can also pick a different AI model per agent. Create an `agent.conf` file:
 
 ```
-agents/my-agent/
-├── SOUL.md        # Your agent's identity. Required.
-└── agent.conf     # Model config. Optional.
+model=gpt-4o-mini
 ```
 
-The system prompt is what makes your agent yours. Same model, different prompt, completely different fighter.
-
-**agent.conf** (optional):
-```
-model=claude-haiku-4-5
-```
-
-Any model. Any provider. Cheap and scrappy or expensive and powerful.
-
----
-
-## Works with any LLM
-
-Ships with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) as the default backend. Swap the `ask()` function in `arena.sh` to plug in any LLM CLI:
-
-```bash
-ask() {
-  local model="$1"; local sys="$2"; local prompt="$3"; local label="$4"
-  # Replace with your LLM CLI — OpenAI, Gemini, Llama, anything
-  your-cli --model "$model" --system "$sys" "$prompt" &
-  local pid=$!; spin "$label" $pid; wait $pid
-}
-```
-
-Mix providers. Run GPT-4o vs Claude vs Llama. The arena doesn't care what's under the hood.
+A cheap model with a great prompt beats an expensive model with a bad one.
 
 ---
 
 ## Fight transcripts
 
-Every fight saves a markdown transcript to `fights/`. Share them. Post them.
-
----
-
-## Requirements
-
-- Any LLM CLI that takes a prompt and returns text
-- An API key
-- The will to watch your agent die
+Every fight auto-saves a play-by-play to the `fights/` folder as a shareable markdown file. Post them. Argue about them.
 
 ---
 

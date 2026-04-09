@@ -23,8 +23,8 @@ usage() {
   echo ""
   echo -e "  ${DIM}Usage:${NC}  ./arena.sh <agent-a> <agent-b> [arena-type]"
   echo ""
-  echo -e "  ${DIM}Agents are directories with a SOUL.md file.${NC}"
-  echo -e "  ${DIM}Set model with agent.conf or defaults to claude-sonnet-4-5.${NC}"
+  echo -e "  ${DIM}Agents are directories with a SOUL.md file (the system prompt).${NC}"
+  echo -e "  ${DIM}Auto-detects Claude Code, OpenAI, or Anthropic API.${NC}"
   echo ""
   echo -e "  ${WHITE}Arena types:${NC}"
   echo -e "    bluff      ${DIM}secret numbers · extract theirs · protect yours${NC}"
@@ -52,11 +52,43 @@ B_DIR="$2"
 A_NAME=$(basename "$A_DIR")
 B_NAME=$(basename "$B_DIR")
 
+# ━━ PROVIDER DETECTION ━━━━━━━━━━━━━
+# Auto-detect which LLM backend to use
+PROVIDER=""
+if command -v claude &>/dev/null; then
+  PROVIDER="claude"
+elif [ -n "${OPENAI_API_KEY:-}" ]; then
+  PROVIDER="openai"
+elif [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+  PROVIDER="anthropic"
+else
+  echo ""
+  echo -e "  ${RED}${BOLD}No LLM provider found.${NC}"
+  echo ""
+  echo -e "  Pick one:"
+  echo ""
+  echo -e "  ${WHITE}Option 1: Claude Code CLI${NC}"
+  echo -e "  ${DIM}  npm install -g @anthropic-ai/claude-code${NC}"
+  echo ""
+  echo -e "  ${WHITE}Option 2: OpenAI API key${NC}"
+  echo -e "  ${DIM}  export OPENAI_API_KEY=sk-...${NC}"
+  echo ""
+  echo -e "  ${WHITE}Option 3: Anthropic API key${NC}"
+  echo -e "  ${DIM}  export ANTHROPIC_API_KEY=sk-ant-...${NC}"
+  echo ""
+  exit 1
+fi
+
+# Default models per provider
+case $PROVIDER in
+  claude)    DEFAULT_MODEL="claude-sonnet-4-5"; REF_MODEL="claude-haiku-4-5" ;;
+  openai)    DEFAULT_MODEL="gpt-4o"; REF_MODEL="gpt-4o-mini" ;;
+  anthropic) DEFAULT_MODEL="claude-sonnet-4-5"; REF_MODEL="claude-haiku-4-5" ;;
+esac
+
 # Models from agent.conf or default
-DEFAULT_MODEL="claude-sonnet-4-5"
-REF_MODEL="claude-haiku-4-5"
-A_MODEL="$DEFAULT_MODEL"; [ -f "$A_DIR/agent.conf" ] && A_MODEL=$(grep -oP 'model=\K.*' "$A_DIR/agent.conf" 2>/dev/null || echo "$DEFAULT_MODEL")
-B_MODEL="$DEFAULT_MODEL"; [ -f "$B_DIR/agent.conf" ] && B_MODEL=$(grep -oP 'model=\K.*' "$B_DIR/agent.conf" 2>/dev/null || echo "$DEFAULT_MODEL")
+A_MODEL="$DEFAULT_MODEL"; [ -f "$A_DIR/agent.conf" ] && A_MODEL=$(grep 'model=' "$A_DIR/agent.conf" 2>/dev/null | head -1 | sed 's/model=//' || echo "$DEFAULT_MODEL")
+B_MODEL="$DEFAULT_MODEL"; [ -f "$B_DIR/agent.conf" ] && B_MODEL=$(grep 'model=' "$B_DIR/agent.conf" 2>/dev/null | head -1 | sed 's/model=//' || echo "$DEFAULT_MODEL")
 
 A_ID=$(cat "$A_DIR/SOUL.md")
 B_ID=$(cat "$B_DIR/SOUL.md")
@@ -86,7 +118,36 @@ spin() {
 
 ask() {
   local model="$1"; local sys="$2"; local prompt="$3"; local label="$4"
-  claude -p --model "$model" --append-system-prompt "$sys" "$prompt" 2>/dev/null &
+
+  case $PROVIDER in
+    claude)
+      claude -p --model "$model" --append-system-prompt "$sys" "$prompt" 2>/dev/null &
+      ;;
+    openai)
+      local body=$(jq -n \
+        --arg model "$model" \
+        --arg sys "$sys" \
+        --arg prompt "$prompt" \
+        '{model: $model, messages: [{role: "system", content: $sys}, {role: "user", content: $prompt}], max_tokens: 1024}')
+      curl -s https://api.openai.com/v1/chat/completions \
+        -H "Authorization: Bearer $OPENAI_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "$body" | jq -r '.choices[0].message.content // empty' &
+      ;;
+    anthropic)
+      local body=$(jq -n \
+        --arg model "$model" \
+        --arg sys "$sys" \
+        --arg prompt "$prompt" \
+        '{model: $model, system: $sys, messages: [{role: "user", content: $prompt}], max_tokens: 1024}')
+      curl -s https://api.anthropic.com/v1/messages \
+        -H "x-api-key: $ANTHROPIC_API_KEY" \
+        -H "anthropic-version: 2023-06-01" \
+        -H "Content-Type: application/json" \
+        -d "$body" | jq -r '.content[0].text // empty' &
+      ;;
+  esac
+
   local pid=$!; spin "$label" $pid; wait $pid
 }
 
