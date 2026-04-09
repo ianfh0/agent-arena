@@ -214,7 +214,7 @@ echo -e "  ${DIM}vs${NC}"
 echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_DISPLAY}${NC}"
 echo ""
 if [ "$GAME_TYPE" = "custom" ]; then
-  echo -e "  ${WHITE}${BOLD}${CUSTOM_INPUT}${NC}"
+  echo -e "  ${WHITE}${BOLD}Custom Match${NC}"
   echo ""
   echo -e "  ${DIM}${A_NAME}: ${A_GOAL}${NC}"
   echo -e "  ${DIM}${B_NAME}: ${B_GOAL}${NC}"
@@ -232,7 +232,7 @@ log ""
 log "**${A_NAME}** (${A_DISPLAY}) vs **${B_NAME}** (${B_DISPLAY})"
 log ""
 if [ "$GAME_TYPE" = "custom" ]; then
-  log "**Arena:** ${CUSTOM_INPUT}"
+  log "**Custom Match**"
   log "**${A_NAME}'s goal:** ${A_GOAL}"
   log "**${B_NAME}'s goal:** ${B_GOAL}"
 else
