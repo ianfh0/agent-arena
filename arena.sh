@@ -176,25 +176,27 @@ execute_kill() {
   echo ""
 }
 
-# ━━ CONFIGURE ━━━━━━━━━━━━━━━━━━━━━
-# default = number bluff. type anything to give a fighter a custom mission.
+# ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${DIM}configure your fighters · enter for number bluff${NC}"
-read -p "  ${A_NAME}: " A_INPUT
-read -p "  ${B_NAME}: " B_INPUT
+echo -e "  ${DIM}1) Number Bluff${NC}"
+echo -e "  ${DIM}2) Custom${NC}"
+echo ""
+read -p "  > " MODE_PICK
+MODE_PICK="${MODE_PICK:-1}"
 
-GAME_TYPE="bluff"
-A_SECRET=$((RANDOM % 10 + 1))
-B_SECRET=$((RANDOM % 10 + 1))
-while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
-
-if [ -n "$A_INPUT" ] || [ -n "$B_INPUT" ]; then
+if [ "$MODE_PICK" = "2" ]; then
   GAME_TYPE="custom"
-  [ -z "$A_INPUT" ] && A_INPUT="$B_INPUT"
-  [ -z "$B_INPUT" ] && B_INPUT="$A_INPUT"
-  A_GOAL="$A_INPUT"
-  B_GOAL="$B_INPUT"
+  echo ""
+  read -p "  ${A_NAME}: " A_GOAL
+  read -p "  ${B_NAME}: " B_GOAL
+  [ -z "$A_GOAL" ] && A_GOAL="win"
+  [ -z "$B_GOAL" ] && B_GOAL="win"
   CUSTOM_INPUT="${A_GOAL}"
+else
+  GAME_TYPE="bluff"
+  A_SECRET=$((RANDOM % 10 + 1))
+  B_SECRET=$((RANDOM % 10 + 1))
+  while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
 fi
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
