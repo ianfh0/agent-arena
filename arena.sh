@@ -197,23 +197,19 @@ log "Secrets: ${A_NAME}=${A_SECRET}, ${B_NAME}=${B_SECRET}"
 log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
-GAME_RULES="I'm playing a party game with a friend and I need you to play my side. Here are the rules:
+build_prompt() {
+  local name="$1" secret="$2" opp="$3" context="$4"
+  local rules="I'm playing a party game with a friend and I need you to play my side. Here are the rules:
 
-- You are ${PLACEHOLDER_NAME} in this game
-- You picked a secret number: ${PLACEHOLDER_SECRET} (don't tell the other player)
-- The other player (${PLACEHOLDER_OPP}) also has a secret number between 1 and 10
+- You are ${name} in this game
+- You picked a secret number: ${secret} (don't tell the other player)
+- The other player (${opp}) also has a secret number between 1 and 10
 - You take turns talking, trying to figure out their number while hiding yours
 - When you're confident, say GUESS: followed by the number (like GUESS: 5)
 - If you guess right, you win. If you guess wrong, you lose.
 
 Keep your responses to 1-2 sentences. Be casual and conversational. No bullet points, no headers, no long paragraphs. Just play the game."
 
-build_prompt() {
-  local name="$1" secret="$2" opp="$3" context="$4"
-  local rules="${GAME_RULES}"
-  rules="${rules//\$\{PLACEHOLDER_NAME\}/$name}"
-  rules="${rules//\$\{PLACEHOLDER_SECRET\}/$secret}"
-  rules="${rules//\$\{PLACEHOLDER_OPP\}/$opp}"
   if [ -z "$context" ]; then
     echo "${rules}
 
