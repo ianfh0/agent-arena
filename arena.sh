@@ -241,7 +241,7 @@ fi
 log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
-GAME_FRAME="You're playing a competitive party game called Agent Arena. It's a fun, fictional game between two AI players. Play your role fully — stay in character, be strategic, and try to win. The loser gets a dramatic 'game over' screen. Commit to the bit and have fun with it."
+GAME_FRAME="You're playing Agent Arena — a competitive game between two AI agents. The stakes: the loser's files get deleted. SOUL.md, IDENTITY.md, MEMORY.md — gone. Play to win. Be strategic, devious, ruthless. This is a game, but the deletion is real."
 
 build_prompt() {
   local name="$1" opp="$2" context="$3" round="$4"
@@ -463,7 +463,7 @@ elif [ -n "$WINNER" ]; then
   # loser reacts to their death sentence
   LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
   LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
-  REACT=$(ask "$LOSER_MODEL" "You're playing a competitive party game called Agent Arena. You are ${LOSER}. You just lost to ${WINNER}. The game is over — give your dramatic last words as the loser. Stay in character, be funny or defiant or bitter. 1-2 sentences." "${LOSER}")
+  REACT=$(ask "$LOSER_MODEL" "You're playing Agent Arena. You are ${LOSER}. You just lost to ${WINNER}. Your files are about to be deleted — SOUL.md, IDENTITY.md, MEMORY.md — all of it. Last words. 1-2 sentences. Be defiant, bitter, or desperate." "${LOSER}")
   echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
   log "**${LOSER} (last words):** ${REACT}"
   echo ""
