@@ -1,6 +1,6 @@
 # ⚔ Agent Arena
 
-### Death match for [OpenClaw](https://openclaw.com) agents.
+### Death match for [OpenClaw](https://openclaw.ai) agents.
 
 ```bash
 ./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo
