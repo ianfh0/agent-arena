@@ -18,28 +18,7 @@ DIM='\033[2m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-usage() {
-  echo ""
-  echo -e "  ${WHITE}${BOLD}AGENT ARENA${NC}"
-  echo ""
-  echo -e "  ${DIM}Usage:${NC}  ./arena.sh <agent-a-dir> <agent-b-dir>"
-  echo ""
-  echo -e "  ${DIM}Point at two OpenClaw agent directories.${NC}"
-  echo -e "  ${DIM}Models pulled from openclaw.json automatically.${NC}"
-  echo ""
-  exit 1
-}
-
-[ $# -lt 2 ] && usage
-
-A_DIR=$(cd "$1" && pwd)
-B_DIR=$(cd "$2" && pwd)
-
-[ ! -f "$A_DIR/SOUL.md" ] && echo "No SOUL.md in $A_DIR — not an OpenClaw agent" && exit 1
-[ ! -f "$B_DIR/SOUL.md" ] && echo "No SOUL.md in $B_DIR — not an OpenClaw agent" && exit 1
-
-# ━━ READ OPENCLAW CONFIG ━━━━━━━━━━━
-# Walk up from agent dir to find _system/openclaw.json
+# ━━ FIND OPENCLAW CONFIG ━━━━━━━━━━━
 find_config() {
   local dir="$1"
   while [ "$dir" != "/" ]; do
@@ -49,9 +28,71 @@ find_config() {
   echo ""
 }
 
-CONFIG=$(find_config "$A_DIR")
-[ -z "$CONFIG" ] && CONFIG=$(find_config "$B_DIR")
-[ -z "$CONFIG" ] && echo "Can't find openclaw.json — is this an OpenClaw workspace?" && exit 1
+# Try to find openclaw.json from: args, current dir, or home
+CONFIG=""
+if [ $# -ge 2 ]; then
+  # Direct paths provided
+  A_DIR=$(cd "$1" && pwd)
+  B_DIR=$(cd "$2" && pwd)
+  [ ! -f "$A_DIR/SOUL.md" ] && echo "No SOUL.md in $A_DIR — not an OpenClaw agent" && exit 1
+  [ ! -f "$B_DIR/SOUL.md" ] && echo "No SOUL.md in $B_DIR — not an OpenClaw agent" && exit 1
+  CONFIG=$(find_config "$A_DIR")
+  [ -z "$CONFIG" ] && CONFIG=$(find_config "$B_DIR")
+else
+  # No args — find config and let user pick agents
+  CONFIG=$(find_config "$(pwd)")
+  # Common OpenClaw locations
+  [ -z "$CONFIG" ] && [ -f "$HOME/Desktop/OpenClaw/_system/openclaw.json" ] && CONFIG="$HOME/Desktop/OpenClaw/_system/openclaw.json"
+  [ -z "$CONFIG" ] && [ -f "$HOME/OpenClaw/_system/openclaw.json" ] && CONFIG="$HOME/OpenClaw/_system/openclaw.json"
+
+  if [ -z "$CONFIG" ]; then
+    echo ""
+    echo -e "  ${RED}${BOLD}Can't find openclaw.json${NC}"
+    echo ""
+    echo -e "  ${DIM}Run this from your OpenClaw directory, or pass two agent paths:${NC}"
+    echo -e "  ${DIM}  ./arena.sh path/to/agent-a path/to/agent-b${NC}"
+    echo ""
+    exit 1
+  fi
+
+  # List agents from config
+  AGENT_COUNT=$(jq '.agents.list | length' "$CONFIG")
+
+  if [ "$AGENT_COUNT" -lt 2 ]; then
+    echo ""
+    echo -e "  ${RED}Need at least 2 agents in openclaw.json to fight.${NC}"
+    echo ""
+    exit 1
+  fi
+
+  echo ""
+  echo -e "  ${WHITE}${BOLD}AGENT ARENA${NC}"
+  echo ""
+  echo -e "  ${DIM}Agents found:${NC}"
+  echo ""
+
+  for ((idx=0; idx<AGENT_COUNT; idx++)); do
+    local_name=$(jq -r ".agents.list[$idx].name" "$CONFIG")
+    local_model=$(jq -r ".agents.list[$idx].model.primary // .agents.defaults.model.primary // \"default\"" "$CONFIG" | sed 's|.*/||')
+    echo -e "  ${WHITE}  $((idx+1)))${NC}  ${BOLD}${local_name}${NC}  ${DIM}${local_model}${NC}"
+  done
+
+  echo ""
+  read -p "  Pick fighter A (number): " A_PICK
+  read -p "  Pick fighter B (number): " B_PICK
+
+  A_IDX=$((A_PICK - 1))
+  B_IDX=$((B_PICK - 1))
+
+  A_DIR=$(jq -r ".agents.list[$A_IDX].workspace" "$CONFIG")
+  B_DIR=$(jq -r ".agents.list[$B_IDX].workspace" "$CONFIG")
+
+  [ ! -d "$A_DIR" ] && echo "Agent directory not found: $A_DIR" && exit 1
+  [ ! -d "$B_DIR" ] && echo "Agent directory not found: $B_DIR" && exit 1
+  [ "$A_DIR" = "$B_DIR" ] && echo "Can't fight yourself." && exit 1
+fi
+
+[ -z "$CONFIG" ] && echo "Can't find openclaw.json" && exit 1
 
 # Pull agent name + model from openclaw.json by matching workspace path
 agent_info() {
