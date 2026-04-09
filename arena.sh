@@ -78,8 +78,8 @@ else
   done
 
   echo ""
-  read -p "  Pick fighter A (number): " A_PICK
-  read -p "  Pick fighter B (number): " B_PICK
+  read -p "  Fighter A: " A_PICK
+  read -p "  Fighter B: " B_PICK
 
   A_IDX=$((A_PICK - 1))
   B_IDX=$((B_PICK - 1))
@@ -169,38 +169,24 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${WHITE}${BOLD}Game:${NC}"
+echo -e "  ${DIM}enter = Number Bluff · or type a custom death match${NC}"
 echo ""
-echo -e "  ${WHITE}  1)${NC}  ${BOLD}Number Bluff${NC}  ${DIM}secret numbers, bluff + guess${NC}"
-echo -e "  ${WHITE}  2)${NC}  ${BOLD}Custom${NC}  ${DIM}set your own rules${NC}"
-echo ""
-read -p "  > " GAME_PICK
-GAME_PICK="${GAME_PICK:-1}"
+read -p "  Game: " GAME_INPUT
 
-if [ "$GAME_PICK" = "1" ]; then
+if [ -z "$GAME_INPUT" ]; then
   GAME_TYPE="bluff"
   A_SECRET=$((RANDOM % 10 + 1))
   B_SECRET=$((RANDOM % 10 + 1))
   while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
-elif [ "$GAME_PICK" = "2" ]; then
-  GAME_TYPE="custom"
-  echo ""
-  echo -e "  ${DIM}What's the game? (one line — this is the death match)${NC}"
-  read -p "  > " CUSTOM_INPUT
-  [ -z "$CUSTOM_INPUT" ] && echo "  Need a game." && exit 1
-  echo ""
-  echo -e "  ${DIM}${A_NAME}'s secret goal: (enter to use same as game)${NC}"
-  read -p "  > " A_GOAL
-  [ -z "$A_GOAL" ] && A_GOAL="$CUSTOM_INPUT"
-  echo ""
-  echo -e "  ${DIM}${B_NAME}'s secret goal: (enter to use same as game)${NC}"
-  read -p "  > " B_GOAL
-  [ -z "$B_GOAL" ] && B_GOAL="$CUSTOM_INPUT"
 else
   GAME_TYPE="custom"
-  CUSTOM_INPUT="$GAME_PICK"
-  A_GOAL="$GAME_PICK"
-  B_GOAL="$GAME_PICK"
+  CUSTOM_INPUT="$GAME_INPUT"
+  echo ""
+  echo -e "  ${DIM}Secret goals (enter = same for both, or set each):${NC}"
+  read -p "  ${A_NAME}: " A_GOAL
+  [ -z "$A_GOAL" ] && A_GOAL="$CUSTOM_INPUT"
+  read -p "  ${B_NAME}: " B_GOAL
+  [ -z "$B_GOAL" ] && B_GOAL="$CUSTOM_INPUT"
 fi
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
