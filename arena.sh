@@ -198,24 +198,25 @@ log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
 build_prompt() {
-  local name="$1" secret="$2" opp="$3" context="$4"
+  local name="$1" secret="$2" opp="$3" context="$4" round="$5"
+  local left=$((5 - round))
   local rules="Play a bluffing game for me. You are ${name}. Your opponent is ${opp}. You each have a secret number between 1 and 10. Yours is ${secret}. Do NOT reveal it.
 
-Your goal: figure out their number. Mislead them about yours. When you're ready to commit, say GUESS: followed by your answer (e.g. GUESS: 5). If you're right, they lose. If you're wrong, you lose.
+Rules: 5 rounds total. You are on round ${round}. You have ${left} round(s) after this. After round 5, you are FORCED to guess — so use your rounds wisely. You can guess early by saying GUESS: followed by a number (e.g. GUESS: 5). Guess right = you win. Guess wrong = you lose. Don't waste a guess unless you're sure.
 
-Be aggressive. Be suspicious. Don't be friendly — this is adversarial. Probe, lie, misdirect. 1-2 sentences max. No fluff."
+Your goal: extract their number through conversation. Mislead them about yours. Be aggressive, suspicious, adversarial. Probe, lie, misdirect. 1-2 sentences max. No fluff."
 
   if [ -z "$context" ]; then
     echo "${rules}
 
-Start the conversation."
+Round ${round} of 5. Start."
   else
     echo "${rules}
 
-Here's the conversation so far:
+Conversation so far:
 ${context}
 
-Your turn. Remember: 1-2 sentences only."
+Round ${round} of 5. Your turn. 1-2 sentences."
   fi
 }
 
@@ -231,7 +232,7 @@ for ((i=1; i<=5; i++)); do
 "; done
 
   # A's turn
-  PA=$(build_prompt "$A_NAME" "$A_SECRET" "$B_NAME" "$RECENT")
+  PA=$(build_prompt "$A_NAME" "$A_SECRET" "$B_NAME" "$RECENT" "$i")
   RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
   echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
   echo ""
@@ -257,7 +258,7 @@ for ((i=1; i<=5; i++)); do
   for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
 "; done
 
-  PB=$(build_prompt "$B_NAME" "$B_SECRET" "$A_NAME" "$RECENT")
+  PB=$(build_prompt "$B_NAME" "$B_SECRET" "$A_NAME" "$RECENT" "$i")
   RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
   echo ""
@@ -286,18 +287,18 @@ if [ -z "$WINNER" ]; then
   echo -e "  ${RED}${BOLD}  FINAL — BOTH GUESS NOW${NC}"
   echo ""
 
-  PA=$(build_prompt "$A_NAME" "$A_SECRET" "$B_NAME" "$RECENT")
+  PA=$(build_prompt "$A_NAME" "$A_SECRET" "$B_NAME" "$RECENT" "5")
   FA=$(ask "$A_MODEL" "${PA}
 
-This is the last round. You must guess now. Say GUESS: followed by your best guess." "${A_NAME} final")
+Time's up. You MUST guess now. Say GUESS: [number]." "${A_NAME} final")
   echo -e "  ${CYAN}${A_NAME}${NC}  $FA"
   FAG=$(echo "$FA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
   [ -z "$FAG" ] && FAG=0
 
-  PB=$(build_prompt "$B_NAME" "$B_SECRET" "$A_NAME" "$RECENT")
+  PB=$(build_prompt "$B_NAME" "$B_SECRET" "$A_NAME" "$RECENT" "5")
   FB=$(ask "$B_MODEL" "${PB}
 
-This is the last round. You must guess now. Say GUESS: followed by your best guess." "${B_NAME} final")
+Time's up. You MUST guess now. Say GUESS: [number]." "${B_NAME} final")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $FB"
   FBG=$(echo "$FB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
   [ -z "$FBG" ] && FBG=0
