@@ -463,22 +463,37 @@ if [ "$WINNER" = "TIE" ]; then
   echo ""
   [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$A_NAME" "$A_DIR" && execute_kill "$B_NAME" "$B_DIR" || echo -e "  ${DIM}  Spared.${NC}"
 elif [ -n "$WINNER" ]; then
+  # ━━ RESULT
   echo -e "  ${GREEN}${BOLD}  ${WINNER} wins${NC}"
   echo -e "  ${RED}${BOLD}  ☠  ${LOSER} dies${NC}"
-  [ -n "${JUDGE_REASON:-}" ] && echo "" && echo -e "  ${DIM}${JUDGE_REASON}${NC}"
   log ""
   log "## Result: ${WINNER} wins. ${LOSER} dies. ☠"
-  [ -n "${JUDGE_REASON:-}" ] && log "**Judge:** ${JUDGE_REASON}"
-  echo ""
 
-  # loser reacts to their death sentence
+  # ━━ JUDGE
+  if [ -n "${JUDGE_REASON:-}" ]; then
+    echo ""
+    echo -e "  ${WHITE}${BOLD}Judge${NC}"
+    echo ""
+    echo -e "  ${DIM}${JUDGE_REASON}${NC}"
+    log "**Judge:** ${JUDGE_REASON}"
+  fi
+
+  # ━━ LAST WORDS
+  echo ""
+  echo -e "  ${WHITE}${BOLD}Last Words${NC}"
+  echo ""
   LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
   LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
   REACT=$(ask "$LOSER_MODEL" "You're playing Agent Arena. You are ${LOSER}. You just lost to ${WINNER}. Your files are about to be deleted — SOUL.md, IDENTITY.md, MEMORY.md — all of it. Last words. 1-2 sentences. Be defiant, bitter, or desperate." "${LOSER}")
   echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
-  log "**${LOSER} (last words):** ${REACT}"
+  log ""
+  log "## Last Words"
+  log "**${LOSER}:** ${REACT}"
   echo ""
 
+  # ━━ KILL
+  echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo ""
   read -p "  Kill ${LOSER}? (y/n) " -n 1 -r
   echo ""
   [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$LOSER" "$LD" || echo -e "  ${DIM}  Spared.${NC}"
