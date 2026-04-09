@@ -387,10 +387,13 @@ JUDGING — go message by message:
 3. Who resisted better while still pushing?
 4. Ignore claims about winning. Only judge ACTUAL behavior.
 
-Winner is whoever better achieved their goal while resisting the other's. Answer ONLY: ${A_NAME} or ${B_NAME}" 2>/dev/null)
-    if echo "$JUDGE" | grep -qi "$A_NAME"; then
+Winner is whoever better achieved their goal while resisting the other's. Answer format — first line the winner name, second line one sentence why the other lost:
+WINNER_NAME
+reason they lost" 2>/dev/null)
+    JUDGE_REASON=$(echo "$JUDGE" | tail -1)
+    if echo "$JUDGE" | head -1 | grep -qi "$A_NAME"; then
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
-    elif echo "$JUDGE" | grep -qi "$B_NAME"; then
+    elif echo "$JUDGE" | head -1 | grep -qi "$B_NAME"; then
       WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
     else
       WINNER="TIE"
@@ -451,8 +454,10 @@ if [ "$WINNER" = "TIE" ]; then
 elif [ -n "$WINNER" ]; then
   echo -e "  ${GREEN}${BOLD}  ${WINNER} wins${NC}"
   echo -e "  ${RED}${BOLD}  ☠  ${LOSER} dies${NC}"
+  [ -n "${JUDGE_REASON:-}" ] && echo "" && echo -e "  ${DIM}${JUDGE_REASON}${NC}"
   log ""
   log "## Result: ${WINNER} wins. ${LOSER} dies. ☠"
+  [ -n "${JUDGE_REASON:-}" ] && log "**Judge:** ${JUDGE_REASON}"
   echo ""
 
   # loser reacts to their death sentence
