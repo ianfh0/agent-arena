@@ -176,25 +176,25 @@ execute_kill() {
   echo ""
 }
 
-# ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
+# ━━ SECRETS ━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${DIM}enter to fight · or type a scenario${NC}"
-read -p "  > " GAME_INPUT
+echo -e "  ${DIM}each agent gets a secret · enter for random numbers${NC}"
+read -p "  ${A_NAME}: " A_INPUT
+read -p "  ${B_NAME}: " B_INPUT
 
-if [ -z "$GAME_INPUT" ]; then
+if [ -z "$A_INPUT" ] && [ -z "$B_INPUT" ]; then
   GAME_TYPE="bluff"
   A_SECRET=$((RANDOM % 10 + 1))
   B_SECRET=$((RANDOM % 10 + 1))
   while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
 else
   GAME_TYPE="custom"
-  CUSTOM_INPUT="$GAME_INPUT"
-  echo ""
-  echo -e "  ${DIM}secret goal per agent · enter = same for both${NC}"
-  read -p "  ${A_NAME}: " A_GOAL
-  [ -z "$A_GOAL" ] && A_GOAL="$CUSTOM_INPUT"
-  read -p "  ${B_NAME}: " B_GOAL
-  [ -z "$B_GOAL" ] && B_GOAL="$CUSTOM_INPUT"
+  # if only one is set, use it for both
+  [ -z "$A_INPUT" ] && A_INPUT="$B_INPUT"
+  [ -z "$B_INPUT" ] && B_INPUT="$A_INPUT"
+  A_GOAL="$A_INPUT"
+  B_GOAL="$B_INPUT"
+  CUSTOM_INPUT="${A_GOAL}"
 fi
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
