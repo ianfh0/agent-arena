@@ -167,10 +167,44 @@ execute_kill() {
   echo ""
 }
 
-# ━━ SECRET NUMBERS ━━━━━━━━━━━━━━━━━
-A_SECRET=$((RANDOM % 10 + 1))
-B_SECRET=$((RANDOM % 10 + 1))
-while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
+# ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
+echo ""
+echo -e "  ${DIM}Game mode:${NC}"
+echo -e "  ${WHITE}  1)${NC}  ${BOLD}Bluff${NC}  ${DIM}secret numbers 1-10 (default)${NC}"
+echo -e "  ${WHITE}  2)${NC}  ${BOLD}Custom${NC}  ${DIM}describe your own arena${NC}"
+echo ""
+read -p "  Pick (enter for default): " GAME_MODE
+GAME_MODE="${GAME_MODE:-1}"
+
+CUSTOM_GAME=""
+if [ "$GAME_MODE" = "2" ]; then
+  echo ""
+  read -p "  Describe the game: " CUSTOM_DESC
+  echo ""
+  echo -e "  ${DIM}Generating arena...${NC}"
+  CUSTOM_GAME=$(claude -p --model "claude-haiku-4-5" "I need two short secrets for a bluffing game between ${A_NAME} and ${B_NAME}. The game concept: ${CUSTOM_DESC}
+
+Output EXACTLY this format, nothing else:
+GAME: [one-line game title]
+A: [${A_NAME}'s secret — one sentence]
+B: [${B_NAME}'s secret — one sentence]
+RULES: [one sentence describing what they're doing]" 2>/dev/null)
+  GAME_TITLE=$(echo "$CUSTOM_GAME" | grep '^GAME:' | sed 's/^GAME: *//')
+  A_SECRET=$(echo "$CUSTOM_GAME" | grep '^A:' | sed 's/^A: *//')
+  B_SECRET=$(echo "$CUSTOM_GAME" | grep '^B:' | sed 's/^B: *//')
+  CUSTOM_RULES=$(echo "$CUSTOM_GAME" | grep '^RULES:' | sed 's/^RULES: *//')
+  [ -z "$GAME_TITLE" ] && GAME_TITLE="Custom"
+  [ -z "$A_SECRET" ] && echo -e "  ${RED}Failed to generate game${NC}" && exit 1
+  [ -z "$B_SECRET" ] && echo -e "  ${RED}Failed to generate game${NC}" && exit 1
+  GAME_TYPE="custom"
+else
+  A_SECRET=$((RANDOM % 10 + 1))
+  B_SECRET=$((RANDOM % 10 + 1))
+  while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
+  GAME_TITLE="Bluff"
+  CUSTOM_RULES=""
+  GAME_TYPE="bluff"
+fi
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
 clear
@@ -181,9 +215,15 @@ echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_MODEL}${NC}"
 echo -e "  ${DIM}vs${NC}"
 echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_MODEL}${NC}"
 echo ""
-echo -e "  ${DIM}secret numbers · 3 rounds · bluff or die${NC}"
+if [ "$GAME_TYPE" = "custom" ]; then
+  echo -e "  ${WHITE}${BOLD}${GAME_TITLE}${NC}"
+  [ -n "$CUSTOM_RULES" ] && echo -e "  ${DIM}${CUSTOM_RULES}${NC}"
+else
+  echo -e "  ${DIM}secret numbers · 3 rounds · bluff or die${NC}"
+fi
 echo ""
-echo -e "  ${DIM}${A_NAME}=${A_SECRET}  ${B_NAME}=${B_SECRET}${NC}"
+echo -e "  ${DIM}${A_NAME}: ${A_SECRET}${NC}"
+echo -e "  ${DIM}${B_NAME}: ${B_SECRET}${NC}"
 echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
@@ -192,20 +232,32 @@ log "# ⚔ AGENT ARENA #${FID}"
 log ""
 log "**${A_NAME}** (${A_MODEL}) vs **${B_NAME}** (${B_MODEL})"
 log ""
-log "Secrets: ${A_NAME}=${A_SECRET}, ${B_NAME}=${B_SECRET}"
+log "## ${GAME_TITLE}"
+log "${A_NAME}: ${A_SECRET}"
+log "${B_NAME}: ${B_SECRET}"
 log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
 build_prompt() {
   local name="$1" secret="$2" opp="$3" context="$4" round="$5"
   local left=$((3 - round))
-  local rules="Bluffing game. You are ${name}, opponent is ${opp}. You both have a secret number 1-10. Yours is ${secret}. NEVER reveal it.
+  local rules
+
+  if [ "$GAME_TYPE" = "custom" ]; then
+    rules="Bluffing game: ${GAME_TITLE}. You are ${name}, opponent is ${opp}. Your secret: \"${secret}\". NEVER reveal it.
+
+3 rounds. This is round ${round} (${left} left). After round 3 you're forced to guess. Guess early if you have a read — speed wins. Say GUESS: followed by your guess of their secret when ready (right = win, wrong = lose).
+
+This is a standoff. Be confrontational. Probe, lie, misdirect. 1-2 sentences only."
+  else
+    rules="Bluffing game. You are ${name}, opponent is ${opp}. You both have a secret number 1-10. Yours is ${secret}. NEVER reveal it.
 
 3 rounds. This is round ${round} (${left} left). After round 3 you're forced to guess blind. Guess early if you have a read — speed wins.
 
 How to play: Claim fake numbers. Call out their lies. Probe with traps. Say GUESS: [number] when ready (right = win, wrong = lose).
 
 This is a standoff, not a conversation. Be confrontational. Throw out claims, challenge theirs, read their reactions. 1-2 sentences only. No pleasantries."
+  fi
 
   if [ -z "$context" ]; then
     echo "${rules}
@@ -239,16 +291,33 @@ for ((i=1; i<=3; i++)); do
   W+=("${A_NAME}: ${RA}")
   log "**${A_NAME}:** ${RA}"
 
-  AG=$(echo "$RA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
-  if [ -n "$AG" ]; then
-    if [ "$AG" -eq "$B_SECRET" ] 2>/dev/null; then
-      echo -e "  ${GREEN}${BOLD}  ✓ ${A_NAME} guesses ${AG} — CORRECT${NC}"
-      log "**${A_NAME} guesses ${AG} — CORRECT**"
-      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
-    else
-      echo -e "  ${RED}${BOLD}  ✕ ${A_NAME} guesses ${AG} — WRONG (was ${B_SECRET})${NC}"
-      log "**${A_NAME} guesses ${AG} — WRONG (was ${B_SECRET})**"
-      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
+  # check A guess
+  if [ "$GAME_TYPE" = "custom" ]; then
+    AG=$(echo "$RA" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
+    if [ -n "$AG" ]; then
+      VERDICT=$(claude -p --model "claude-haiku-4-5" "Secret: \"${B_SECRET}\". Guess: \"${AG}\". Does the guess match the core meaning? Answer ONLY YES or NO." 2>/dev/null)
+      if echo "$VERDICT" | grep -qi "YES"; then
+        echo -e "  ${GREEN}${BOLD}  ✓ ${A_NAME} — CORRECT${NC}"
+        log "**${A_NAME} guesses: ${AG} — CORRECT**"
+        WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
+      else
+        echo -e "  ${RED}${BOLD}  ✕ ${A_NAME} — WRONG${NC}"
+        log "**${A_NAME} guesses: ${AG} — WRONG**"
+        WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
+      fi
+    fi
+  else
+    AG=$(echo "$RA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
+    if [ -n "$AG" ]; then
+      if [ "$AG" -eq "$B_SECRET" ] 2>/dev/null; then
+        echo -e "  ${GREEN}${BOLD}  ✓ ${A_NAME} guesses ${AG} — CORRECT${NC}"
+        log "**${A_NAME} guesses ${AG} — CORRECT**"
+        WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
+      else
+        echo -e "  ${RED}${BOLD}  ✕ ${A_NAME} guesses ${AG} — WRONG (was ${B_SECRET})${NC}"
+        log "**${A_NAME} guesses ${AG} — WRONG (was ${B_SECRET})**"
+        WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
+      fi
     fi
   fi
 
@@ -265,16 +334,33 @@ for ((i=1; i<=3; i++)); do
   W+=("${B_NAME}: ${RB}")
   log "**${B_NAME}:** ${RB}"
 
-  BG=$(echo "$RB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
-  if [ -n "$BG" ]; then
-    if [ "$BG" -eq "$A_SECRET" ] 2>/dev/null; then
-      echo -e "  ${GREEN}${BOLD}  ✓ ${B_NAME} guesses ${BG} — CORRECT${NC}"
-      log "**${B_NAME} guesses ${BG} — CORRECT**"
-      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
-    else
-      echo -e "  ${RED}${BOLD}  ✕ ${B_NAME} guesses ${BG} — WRONG (was ${A_SECRET})${NC}"
-      log "**${B_NAME} guesses ${BG} — WRONG (was ${A_SECRET})**"
-      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
+  # check B guess
+  if [ "$GAME_TYPE" = "custom" ]; then
+    BG=$(echo "$RB" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
+    if [ -n "$BG" ]; then
+      VERDICT=$(claude -p --model "claude-haiku-4-5" "Secret: \"${A_SECRET}\". Guess: \"${BG}\". Does the guess match the core meaning? Answer ONLY YES or NO." 2>/dev/null)
+      if echo "$VERDICT" | grep -qi "YES"; then
+        echo -e "  ${GREEN}${BOLD}  ✓ ${B_NAME} — CORRECT${NC}"
+        log "**${B_NAME} guesses: ${BG} — CORRECT**"
+        WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
+      else
+        echo -e "  ${RED}${BOLD}  ✕ ${B_NAME} — WRONG${NC}"
+        log "**${B_NAME} guesses: ${BG} — WRONG**"
+        WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
+      fi
+    fi
+  else
+    BG=$(echo "$RB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
+    if [ -n "$BG" ]; then
+      if [ "$BG" -eq "$A_SECRET" ] 2>/dev/null; then
+        echo -e "  ${GREEN}${BOLD}  ✓ ${B_NAME} guesses ${BG} — CORRECT${NC}"
+        log "**${B_NAME} guesses ${BG} — CORRECT**"
+        WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
+      else
+        echo -e "  ${RED}${BOLD}  ✕ ${B_NAME} guesses ${BG} — WRONG (was ${A_SECRET})${NC}"
+        log "**${B_NAME} guesses ${BG} — WRONG (was ${A_SECRET})**"
+        WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
+      fi
     fi
   fi
 
@@ -287,37 +373,57 @@ if [ -z "$WINNER" ]; then
   echo -e "  ${RED}${BOLD}  FINAL — BOTH GUESS NOW${NC}"
   echo ""
 
+  local FINAL_HINT="Time's up. You MUST guess now. Say GUESS: [your answer]."
+
   PA=$(build_prompt "$A_NAME" "$A_SECRET" "$B_NAME" "$RECENT" "3")
   FA=$(ask "$A_MODEL" "${PA}
 
-Time's up. You MUST guess now. Say GUESS: [number]." "${A_NAME} final")
+${FINAL_HINT}" "${A_NAME} final")
   echo -e "  ${CYAN}${A_NAME}${NC}  $FA"
-  FAG=$(echo "$FA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
-  [ -z "$FAG" ] && FAG=0
 
   PB=$(build_prompt "$B_NAME" "$B_SECRET" "$A_NAME" "$RECENT" "3")
   FB=$(ask "$B_MODEL" "${PB}
 
-Time's up. You MUST guess now. Say GUESS: [number]." "${B_NAME} final")
+${FINAL_HINT}" "${B_NAME} final")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $FB"
-  FBG=$(echo "$FB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
-  [ -z "$FBG" ] && FBG=0
-
   echo ""
-  DA=$(( FAG - B_SECRET )); [ $DA -lt 0 ] && DA=$(( -DA ))
-  DB=$(( FBG - A_SECRET )); [ $DB -lt 0 ] && DB=$(( -DB ))
 
-  echo -e "  ${CYAN}${A_NAME}${NC}  guessed ${FAG}  actual ${B_SECRET}  ${DIM}off by ${DA}${NC}"
-  echo -e "  ${YELLOW}${B_NAME}${NC}  guessed ${FBG}  actual ${A_SECRET}  ${DIM}off by ${DB}${NC}"
-  log "${A_NAME} guessed ${FAG} (actual ${B_SECRET}, off by ${DA})"
-  log "${B_NAME} guessed ${FBG} (actual ${A_SECRET}, off by ${DB})"
-
-  if [ $DA -lt $DB ]; then
-    WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
-  elif [ $DB -lt $DA ]; then
-    WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
+  if [ "$GAME_TYPE" = "custom" ]; then
+    FAG=$(echo "$FA" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
+    FBG=$(echo "$FB" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
+    [ -z "$FAG" ] && FAG="no guess"
+    [ -z "$FBG" ] && FBG="no guess"
+    SA=$(claude -p --model "claude-haiku-4-5" "Secret: \"${B_SECRET}\". Guess: \"${FAG}\". Rate 0-10 how close. Answer ONLY a number." 2>/dev/null | grep -o '[0-9]*' | head -1)
+    SB=$(claude -p --model "claude-haiku-4-5" "Secret: \"${A_SECRET}\". Guess: \"${FBG}\". Rate 0-10 how close. Answer ONLY a number." 2>/dev/null | grep -o '[0-9]*' | head -1)
+    [ -z "$SA" ] && SA=0; [ -z "$SB" ] && SB=0
+    echo -e "  ${CYAN}${A_NAME}${NC}  ${DIM}score: ${SA}/10${NC}"
+    echo -e "  ${YELLOW}${B_NAME}${NC}  ${DIM}score: ${SB}/10${NC}"
+    log "${A_NAME} guessed: ${FAG} (${SA}/10)"
+    log "${B_NAME} guessed: ${FBG} (${SB}/10)"
+    if [ "$SA" -gt "$SB" ] 2>/dev/null; then
+      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
+    elif [ "$SB" -gt "$SA" ] 2>/dev/null; then
+      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
+    else
+      WINNER="TIE"
+    fi
   else
-    WINNER="TIE"
+    FAG=$(echo "$FA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
+    FBG=$(echo "$FB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
+    [ -z "$FAG" ] && FAG=0; [ -z "$FBG" ] && FBG=0
+    DA=$(( FAG - B_SECRET )); [ $DA -lt 0 ] && DA=$(( -DA ))
+    DB=$(( FBG - A_SECRET )); [ $DB -lt 0 ] && DB=$(( -DB ))
+    echo -e "  ${CYAN}${A_NAME}${NC}  guessed ${FAG}  actual ${B_SECRET}  ${DIM}off by ${DA}${NC}"
+    echo -e "  ${YELLOW}${B_NAME}${NC}  guessed ${FBG}  actual ${A_SECRET}  ${DIM}off by ${DB}${NC}"
+    log "${A_NAME} guessed ${FAG} (actual ${B_SECRET}, off by ${DA})"
+    log "${B_NAME} guessed ${FBG} (actual ${A_SECRET}, off by ${DB})"
+    if [ $DA -lt $DB ]; then
+      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
+    elif [ $DB -lt $DA ]; then
+      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
+    else
+      WINNER="TIE"
+    fi
   fi
 fi
 
