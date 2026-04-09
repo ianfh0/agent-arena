@@ -344,11 +344,12 @@ if [ -z "$WINNER" ]; then
     FULL=""
     for ((j=0; j<${#W[@]}; j++)); do FULL="${FULL}${W[$j]}
 "; done
-    JUDGE=$(claude -p --model "claude-haiku-4-5" "Death match arena: \"${CUSTOM_INPUT}\". Here's the full transcript:
+    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are judging a death match. The arena rules were: \"${CUSTOM_INPUT}\"
 
+Transcript:
 ${FULL}
 
-Who won this death match? Consider who was more dominant, persuasive, strategic, or achieved the goal of the arena better. Answer ONLY with the winner's name: ${A_NAME} or ${B_NAME}" 2>/dev/null)
+Based on what ACTUALLY happened in the game — not who sounded more confident — who won? Apply the game's own logic. If someone died, got poisoned, lost, or failed according to the rules, they LOST regardless of how they spun it. Bluffing about surviving doesn't count. Answer ONLY with the winner's name: ${A_NAME} or ${B_NAME}" 2>/dev/null)
     if echo "$JUDGE" | grep -qi "$A_NAME"; then
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
     elif echo "$JUDGE" | grep -qi "$B_NAME"; then
