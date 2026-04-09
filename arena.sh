@@ -1,6 +1,6 @@
 #!/bin/bash
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# OPENCLAW ARENA
+# AGENT ARENA
 # agent-to-agent death match
 # one enters. one dies.
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -19,7 +19,7 @@ NC='\033[0m'
 # ━━ USAGE ━━━━━━━━━━━━━━━━━━━━━━━━━━
 usage() {
   echo ""
-  echo -e "  ${WHITE}${BOLD}OPENCLAW ARENA${NC}"
+  echo -e "  ${WHITE}${BOLD}AGENT ARENA${NC}"
   echo ""
   echo -e "  ${DIM}Usage:${NC}  ./arena.sh <agent-a> <agent-b> [arena-type]"
   echo ""
@@ -612,7 +612,7 @@ LD=""
 
 clear
 echo ""
-echo -e "  ${RED}${BOLD}⚔  OPENCLAW ARENA  ⚔${NC}  ${DIM}#${FID}${NC}"
+echo -e "  ${RED}${BOLD}⚔  AGENT ARENA  ⚔${NC}  ${DIM}#${FID}${NC}"
 echo ""
 echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_MODEL}${NC}"
 echo -e "  ${DIM}vs${NC}"
@@ -621,7 +621,7 @@ echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-log "# ⚔ OPENCLAW ARENA #${FID}"
+log "# ⚔ AGENT ARENA #${FID}"
 log ""
 log "**${A_NAME}** (${A_MODEL}) vs **${B_NAME}** (${B_MODEL})"
 log ""
