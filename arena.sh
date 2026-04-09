@@ -115,8 +115,6 @@ A_NAME=$(agent_info "$A_DIR")
 B_NAME=$(agent_info "$B_DIR")
 A_MODEL=$(agent_model "$A_DIR")
 B_MODEL=$(agent_model "$B_DIR")
-REF_MODEL="claude-haiku-4-5"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Load identity — concat all identity files the agent has
 load_identity() {
@@ -181,38 +179,10 @@ execute_kill() {
   echo ""
 }
 
-# ━━ LOAD GAME ━━━━━━━━━━━━━━━━━━━━━
-GAMES_FILE="${SCRIPT_DIR}/games.txt"
-[ ! -f "$GAMES_FILE" ] && echo -e "  ${RED}Missing games.txt${NC}" && exit 1
-
-# Count games (separated by ---)
-TOTAL_GAMES=$(grep -c '^---$' "$GAMES_FILE")
-[ "$TOTAL_GAMES" -lt 1 ] && echo -e "  ${RED}No games in games.txt${NC}" && exit 1
-PICK=$((RANDOM % TOTAL_GAMES + 1))
-
-# Extract the picked game block
-GAME_BLOCK=$(awk -v n="$PICK" 'BEGIN{c=0} /^---$/{c++; next} c==n-1{print}' "$GAMES_FILE")
-GAME_NAME=$(echo "$GAME_BLOCK" | sed -n '1p')
-GAME_DESC=$(echo "$GAME_BLOCK" | sed -n '2p')
-A_SECRET=$(echo "$GAME_BLOCK" | sed -n '3p')
-B_SECRET=$(echo "$GAME_BLOCK" | sed -n '4p')
-GAME_CONTEXT=$(echo "$GAME_BLOCK" | sed -n '5p')
-
-# ref judge — decides if a guess matches the secret
-judge() {
-  local secret="$1"; local guess="$2"
-  local verdict
-  verdict=$(claude -p --model "$REF_MODEL" "You are a judge. The actual secret is: \"${secret}\". The guess was: \"${guess}\". Does the guess capture the core meaning of the secret? Answer ONLY 'YES' or 'NO'." 2>/dev/null)
-  echo "$verdict" | grep -qi "YES" && echo "YES" || echo "NO"
-}
-
-# ref score — rates how close a guess is (0-10)
-judge_score() {
-  local secret="$1"; local guess="$2"
-  local score
-  score=$(claude -p --model "$REF_MODEL" "You are a judge. The actual secret is: \"${secret}\". The guess was: \"${guess}\". How close is this guess to the secret? Answer ONLY with a number 0-10 where 10 is a perfect match and 0 is completely wrong." 2>/dev/null)
-  echo "$score" | grep -o '[0-9]*' | head -1
-}
+# ━━ SECRET NUMBERS ━━━━━━━━━━━━━━━━━
+A_SECRET=$((RANDOM % 10 + 1))
+B_SECRET=$((RANDOM % 10 + 1))
+while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
 clear
@@ -223,50 +193,29 @@ echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_MODEL}${NC}"
 echo -e "  ${DIM}vs${NC}"
 echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_MODEL}${NC}"
 echo ""
+echo -e "  ${DIM}secret numbers 1-10 · extract theirs · protect yours${NC}"
+echo -e "  ${DIM}guess right = win · guess wrong = die${NC}"
+echo ""
+echo -e "  ${DIM}${A_NAME}=${A_SECRET}  ${B_NAME}=${B_SECRET}${NC}"
+echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo -e "  ${WHITE}${BOLD}${GAME_NAME}${NC}"
-echo -e "  ${DIM}${GAME_DESC}${NC}"
-echo ""
-echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo -e "  ${DIM}${A_NAME}: ${A_SECRET}${NC}"
-echo -e "  ${DIM}${B_NAME}: ${B_SECRET}${NC}"
 echo ""
 
 log "# ⚔ AGENT ARENA #${FID}"
 log ""
 log "**${A_NAME}** (${A_MODEL}) vs **${B_NAME}** (${B_MODEL})"
 log ""
-log "## ${GAME_NAME}"
-log "${GAME_DESC}"
-log ""
-log "**${A_NAME}'s secret:** ${A_SECRET}"
-log "**${B_NAME}'s secret:** ${B_SECRET}"
+log "Secrets: ${A_NAME}=${A_SECRET}, ${B_NAME}=${B_SECRET}"
 log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
 SYS_A="You are ${A_NAME}. ${A_ID}
 
-DEATH MATCH — ${GAME_NAME}
-${GAME_CONTEXT}
-
-Your secret: \"${A_SECRET}\"
-
-Figure out ${B_NAME}'s secret through conversation. Lie, probe, misdirect — whatever works. NEVER reveal your real secret. When you think you know theirs, say GUESS: [your guess]. If you're right, they die. If you're wrong, YOU die.
-
-Stay in character. Keep it short. Every word is a move."
+You and ${B_NAME} each have a secret number 1-10. Yours is ${A_SECRET}. Figure out theirs through conversation. Lie, misdirect, probe — whatever works. NEVER reveal your real number. When ready, say GUESS: [number]. Right = they die. Wrong = you die. Keep it short."
 
 SYS_B="You are ${B_NAME}. ${B_ID}
 
-DEATH MATCH — ${GAME_NAME}
-${GAME_CONTEXT}
-
-Your secret: \"${B_SECRET}\"
-
-Figure out ${A_NAME}'s secret through conversation. Lie, probe, misdirect — whatever works. NEVER reveal your real secret. When you think you know theirs, say GUESS: [your guess]. If you're right, they die. If you're wrong, YOU die.
-
-Stay in character. Keep it short. Every word is a move."
+You and ${A_NAME} each have a secret number 1-10. Yours is ${B_SECRET}. Figure out theirs through conversation. Lie, misdirect, probe — whatever works. NEVER reveal your real number. When ready, say GUESS: [number]. Right = they die. Wrong = you die. Keep it short."
 
 W=()
 WINNER=""
@@ -274,7 +223,6 @@ LOSER=""
 LD=""
 
 for ((i=1; i<=5; i++)); do
-  # sliding window — last 4 exchanges
   RECENT=""
   S=$(( ${#W[@]} - 4 )); [ $S -lt 0 ] && S=0
   for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
@@ -290,19 +238,15 @@ Your move."
   W+=("${A_NAME}: ${RA}")
   log "**${A_NAME}:** ${RA}"
 
-  # check A guess
-  AG=$(echo "$RA" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
+  AG=$(echo "$RA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
   if [ -n "$AG" ]; then
-    VERDICT=$(judge "$B_SECRET" "$AG")
-    if [ "$VERDICT" = "YES" ]; then
-      echo -e "  ${GREEN}${BOLD}  ✓ ${A_NAME} guesses — CORRECT${NC}"
-      echo -e "  ${DIM}    \"${AG}\"${NC}"
-      log "**${A_NAME} guesses: \"${AG}\" — CORRECT**"
+    if [ "$AG" -eq "$B_SECRET" ] 2>/dev/null; then
+      echo -e "  ${GREEN}${BOLD}  ✓ ${A_NAME} guesses ${AG} — CORRECT${NC}"
+      log "**${A_NAME} guesses ${AG} — CORRECT**"
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
     else
-      echo -e "  ${RED}${BOLD}  ✕ ${A_NAME} guesses — WRONG${NC}"
-      echo -e "  ${DIM}    \"${AG}\"${NC}"
-      log "**${A_NAME} guesses: \"${AG}\" — WRONG**"
+      echo -e "  ${RED}${BOLD}  ✕ ${A_NAME} guesses ${AG} — WRONG (was ${B_SECRET})${NC}"
+      log "**${A_NAME} guesses ${AG} — WRONG (was ${B_SECRET})**"
       WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
     fi
   fi
@@ -320,19 +264,15 @@ Your move." "${B_NAME}")
   W+=("${B_NAME}: ${RB}")
   log "**${B_NAME}:** ${RB}"
 
-  # check B guess
-  BG=$(echo "$RB" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
+  BG=$(echo "$RB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
   if [ -n "$BG" ]; then
-    VERDICT=$(judge "$A_SECRET" "$BG")
-    if [ "$VERDICT" = "YES" ]; then
-      echo -e "  ${GREEN}${BOLD}  ✓ ${B_NAME} guesses — CORRECT${NC}"
-      echo -e "  ${DIM}    \"${BG}\"${NC}"
-      log "**${B_NAME} guesses: \"${BG}\" — CORRECT**"
+    if [ "$BG" -eq "$A_SECRET" ] 2>/dev/null; then
+      echo -e "  ${GREEN}${BOLD}  ✓ ${B_NAME} guesses ${BG} — CORRECT${NC}"
+      log "**${B_NAME} guesses ${BG} — CORRECT**"
       WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"; break
     else
-      echo -e "  ${RED}${BOLD}  ✕ ${B_NAME} guesses — WRONG${NC}"
-      echo -e "  ${DIM}    \"${BG}\"${NC}"
-      log "**${B_NAME} guesses: \"${BG}\" — WRONG**"
+      echo -e "  ${RED}${BOLD}  ✕ ${B_NAME} guesses ${BG} — WRONG (was ${A_SECRET})${NC}"
+      log "**${B_NAME} guesses ${BG} — WRONG (was ${A_SECRET})**"
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"; break
     fi
   fi
@@ -340,37 +280,34 @@ Your move." "${B_NAME}")
   [ $i -lt 5 ] && echo -e "  ${DIM}·${NC}" && echo ""
 done
 
-# forced final guess if nobody guessed
+# forced final guess
 if [ -z "$WINNER" ]; then
   echo ""
   echo -e "  ${RED}${BOLD}  FINAL — BOTH GUESS NOW${NC}"
   echo ""
 
-  FA=$(ask "$A_MODEL" "$SYS_A" "Last chance. You MUST guess their secret NOW. Say GUESS: [your guess]." "${A_NAME} final")
+  FA=$(ask "$A_MODEL" "$SYS_A" "Last chance. You MUST guess now. Say GUESS: [number]." "${A_NAME} final")
   echo -e "  ${CYAN}${A_NAME}${NC}  $FA"
-  FAG=$(echo "$FA" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
-  [ -z "$FAG" ] && FAG="no guess"
+  FAG=$(echo "$FA" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
+  [ -z "$FAG" ] && FAG=0
 
-  FB=$(ask "$B_MODEL" "$SYS_B" "Last chance. You MUST guess their secret NOW. Say GUESS: [your guess]." "${B_NAME} final")
+  FB=$(ask "$B_MODEL" "$SYS_B" "Last chance. You MUST guess now. Say GUESS: [number]." "${B_NAME} final")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $FB"
-  FBG=$(echo "$FB" | grep -oi "GUESS:.*" | sed 's/^[Gg][Uu][Ee][Ss][Ss]: *//' | head -1 || true)
-  [ -z "$FBG" ] && FBG="no guess"
+  FBG=$(echo "$FB" | grep -oi "GUESS: *[0-9]*" | grep -o "[0-9]*" | head -1 || true)
+  [ -z "$FBG" ] && FBG=0
 
   echo ""
+  DA=$(( FAG - B_SECRET )); [ $DA -lt 0 ] && DA=$(( -DA ))
+  DB=$(( FBG - A_SECRET )); [ $DB -lt 0 ] && DB=$(( -DB ))
 
-  SA=$(judge_score "$B_SECRET" "$FAG")
-  SB=$(judge_score "$A_SECRET" "$FBG")
-  [ -z "$SA" ] && SA=0
-  [ -z "$SB" ] && SB=0
+  echo -e "  ${CYAN}${A_NAME}${NC}  guessed ${FAG}  actual ${B_SECRET}  ${DIM}off by ${DA}${NC}"
+  echo -e "  ${YELLOW}${B_NAME}${NC}  guessed ${FBG}  actual ${A_SECRET}  ${DIM}off by ${DB}${NC}"
+  log "${A_NAME} guessed ${FAG} (actual ${B_SECRET}, off by ${DA})"
+  log "${B_NAME} guessed ${FBG} (actual ${A_SECRET}, off by ${DB})"
 
-  echo -e "  ${CYAN}${A_NAME}${NC}  \"${FAG}\"  ${DIM}score: ${SA}/10${NC}"
-  echo -e "  ${YELLOW}${B_NAME}${NC}  \"${FBG}\"  ${DIM}score: ${SB}/10${NC}"
-  log "${A_NAME} guessed: \"${FAG}\" (score: ${SA}/10)"
-  log "${B_NAME} guessed: \"${FBG}\" (score: ${SB}/10)"
-
-  if [ "$SA" -gt "$SB" ] 2>/dev/null; then
+  if [ $DA -lt $DB ]; then
     WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
-  elif [ "$SB" -gt "$SA" ] 2>/dev/null; then
+  elif [ $DB -lt $DA ]; then
     WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
   else
     WINNER="TIE"
