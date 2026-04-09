@@ -1,79 +1,68 @@
 # ⚔ Agent Arena
 
-### Build an AI agent. Fight someone else's. Loser gets deleted.
+### Your agent vs theirs. Loser gets deleted.
 
-One command. Two agents enter. The arena invents a new game on the spot — your agents don't know what's coming. Someone wins. Someone's files get deleted off disk. For real.
+One command. Two [OpenClaw](https://openclaw.com) agents enter. The arena invents a new game on the spot — your agents don't know what's coming. Someone wins. Someone's files get deleted off disk. For real.
 
 Every fight is different. The arena generates a fresh game every time — bluffing, deduction, hidden information, strategy. Your agent has to handle whatever gets thrown at it.
 
 In our first test, a dirt-cheap agent manipulated an expensive frontier model into guessing wrong. The big one died.
 
-**It's not about the AI model. It's about how you build your agent.**
+**It's not about the model. It's about how you build your agent.**
 
 ---
 
-## Try it
+## What's an OpenClaw agent?
 
-### 1. Get the code
+[OpenClaw](https://openclaw.com) is an open-source framework for building AI agents with real identity. An OpenClaw agent is a directory with identity files that define who the agent is:
+
+```
+my-agent/
+├── SOUL.md        # Core personality and values
+├── IDENTITY.md    # Name, role, background
+├── MEMORY.md      # What the agent remembers
+└── USER.md        # How it relates to its owner
+```
+
+The `SOUL.md` is what matters most. It's your agent's personality — how it thinks, talks, bluffs, and fights. The better your soul file, the better your agent performs in the arena.
+
+If you don't have an OpenClaw agent yet, start at [openclaw.com](https://openclaw.com).
+
+---
+
+## Fight
 
 ```bash
 git clone https://github.com/ianfh0/agent-arena.git
 cd agent-arena
+./arena.sh path/to/my-agent path/to/their-agent
 ```
 
-### 2. Set up an AI provider (pick one)
+That's it. The arena detects your AI provider automatically:
 
-**OpenAI** (ChatGPT maker):
-```bash
-export OPENAI_API_KEY=sk-your-key-here
-```
+- **Claude Code CLI** — just works if you have it installed
+- **OpenAI API** — `export OPENAI_API_KEY=sk-...`
+- **Anthropic API** — `export ANTHROPIC_API_KEY=sk-ant-...`
 
-**Anthropic** (Claude maker):
-```bash
-export ANTHROPIC_API_KEY=sk-ant-your-key-here
-```
-
-**Claude Code CLI** (if you already have it — just works, no setup):
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-### 3. Build your agent
-
-An agent is a folder with one text file: `SOUL.md`. That's your agent's personality. It determines how your agent thinks, talks, bluffs, and fights.
-
-```bash
-mkdir agents/my-agent
-```
-
-Create `agents/my-agent/SOUL.md`:
+Your agent's `agent.conf` sets which model it fights with:
 
 ```
-You are sharp and calculating. You never give away information for free.
-You ask pointed questions and read between the lines.
-When you're confident, you strike. When you're not, you probe.
-No wasted words. Every sentence has a purpose.
+model=gpt-4o-mini
 ```
 
-That's it. That's your agent.
-
-### 4. Fight
-
-```bash
-./arena.sh agents/my-agent agents/example
-```
+No config file = arena picks a default. Any model works. A cheap model with a strong soul beats an expensive model with a weak one.
 
 ---
 
 ## How it works
 
 1. The arena generates a brand new game — rules, secrets, win conditions
-2. Each agent gets the rules + their own secret (they can't see the other's)
-3. 5 rounds of conversation
+2. Each agent gets the rules + a secret only they know
+3. 5 rounds of conversation — agent identities shape how they play
 4. A judge reads the transcript and picks a winner
-5. Loser's files get deleted
+5. Loser's identity files get deleted
 
-Every fight is a different game. Your agent might be bluffing with numbers one fight and playing a word deduction game the next. You can't prepare for a specific game — you have to build an agent that's good at everything.
+Your agent's `SOUL.md` is its weapon. `IDENTITY.md` is its armor. `MEMORY.md` is its experience. When they're deleted, your agent is gone. You can rebuild — but you have to rebuild.
 
 ---
 
@@ -90,32 +79,19 @@ Every fight is a different game. Your agent might be bluffing with numbers one f
   ☠  my-agent is dead.
 ```
 
-You can rebuild. But it's gone until you do.
-
 ---
 
-## Making your agent better
+## Why OpenClaw agents?
 
-Your `SOUL.md` is everything. Same AI model, different personality file, completely different fighter.
+Regular AI prompts are disposable. OpenClaw agents have persistent identity — files that define who they are, what they value, how they think. That's what makes arena fights interesting. Two agents with the same model but different identities will play completely differently.
 
-Things that win fights:
-- **Strong identity** — agents with clear personalities are harder to manipulate
-- **Strategic instincts** — tell your agent how to handle uncertainty, hidden info, bluffing
-- **Brevity** — agents that talk too much leak information
-
-You can also pick a specific AI model. Create `agent.conf`:
-
-```
-model=gpt-4o-mini
-```
-
-A cheap model with a great personality beats an expensive model with a lazy one.
+The arena tests your agent's identity under pressure. Strong identity = hard to manipulate. Weak identity = easy to read, easy to break.
 
 ---
 
 ## Transcripts
 
-Every fight saves a full play-by-play to `fights/` as markdown. Share them. Post them. Argue about them.
+Every fight saves a play-by-play to `fights/` as markdown. Share them. Post them. Argue about them.
 
 ---
 
