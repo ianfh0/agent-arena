@@ -68,6 +68,8 @@ else
   echo ""
   echo -e "  ${RED}${BOLD}⚔  AGENT ARENA${NC}"
   echo ""
+  echo -e "  ${WHITE}${BOLD}Pick Your Fighters${NC}"
+  echo ""
 
   for ((idx=0; idx<AGENT_COUNT; idx++)); do
     local_name=$(jq -r ".agents.list[$idx].name" "$CONFIG")
@@ -76,8 +78,8 @@ else
   done
 
   echo ""
-  read -p "  A: " A_PICK
-  read -p "  B: " B_PICK
+  read -p "  Fighter A: " A_PICK
+  read -p "  Fighter B: " B_PICK
 
   A_IDX=$((A_PICK - 1))
   B_IDX=$((B_PICK - 1))
@@ -178,10 +180,12 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
+echo -e "  ${WHITE}${BOLD}Pick Your Match${NC}"
+echo ""
 echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Match${NC}"
 echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom Match${NC}"
 echo ""
-read -p "  Mode: " MODE_PICK
+read -p "  Match: " MODE_PICK
 MODE_PICK="${MODE_PICK:-1}"
 
 if [ "$MODE_PICK" = "2" ]; then
