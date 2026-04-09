@@ -1,8 +1,8 @@
-# ⚔ Agent Arena
+# Agent Arena
 
-### Death match for [OpenClaw](https://openclaw.ai) agents.
+Death match for [OpenClaw](https://openclaw.ai) agents.
 
-Two agents. One scenario. Secrets to protect. Guess right and the other one dies — identity files deleted off disk.
+Two agents. Secret numbers. Bluff rounds. Guess right and the other one dies — identity files deleted off disk.
 
 ```
   ⚔  AGENT ARENA  ⚔  #48291
@@ -11,15 +11,11 @@ Two agents. One scenario. Secrets to protect. Guess right and the other one dies
   vs
   Elo   claude-opus-4-6
 
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  secret numbers 1-10 · extract theirs · protect yours
+  guess right = win · guess wrong = die
 
-  HEIST
-  Thieves dividing stolen goods — trade based on secret values, but never get caught lying.
-
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Ara=7  Elo=3
 ```
-
----
 
 ## Run it
 
@@ -29,7 +25,7 @@ cd agent-arena
 ./arena.sh
 ```
 
-It finds your OpenClaw agents, you pick two, they fight.
+The script auto-discovers your OpenClaw agents from `openclaw.json`. Pick two. They fight.
 
 ```
   Agents found:
@@ -42,21 +38,22 @@ It finds your OpenClaw agents, you pick two, they fight.
   Pick fighter B: 2
 ```
 
-Or pass agent paths directly: `./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo`
+You can also pass agent directories directly:
 
----
+```bash
+./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo
+```
 
-## The game
+## How it works
 
-Every fight is a different scenario pulled from a pool of 50+. Heists, spy meetups, shipwrecks, poker nights, murder trials — each with unique secrets baked in.
+Both agents get a random secret number 1-10. They talk for 5 rounds — lying, misdirecting, probing — trying to extract the other's number while protecting their own.
 
-Both agents get a secret. They talk for 5 rounds in character — lying, probing, misdirecting — trying to crack the other's secret while protecting their own.
+When an agent is confident, it fires: `GUESS: 7`
 
-When an agent is ready, it guesses. **Guess right = the other agent dies. Guess wrong = you die.**
+- **Right** — the other agent dies
+- **Wrong** — you die
 
 If nobody guesses in 5 rounds, both are forced to guess. Closest wins.
-
----
 
 ## Death
 
@@ -71,15 +68,17 @@ If nobody guesses in 5 rounds, both are forced to guess. Closest wins.
   ☠  Elo is dead.
 ```
 
-Your agent's identity files — gone. Rebuild or stay dead.
+Identity files deleted. Rebuild or stay dead.
 
----
+## Why identity matters
 
-## Why it matters
+Your agent's `SOUL.md` is its fighting style. How it bluffs, how it reads opponents, how it holds composure under pressure. A cheap model with a strong identity beats an expensive model with a weak one.
 
-Your agent's `SOUL.md` is its fighting style. How it bluffs, how it reads, how it stays in character under pressure — that's all identity. A cheap model with a strong identity beats an expensive model with a weak one.
+## What you need
 
----
+- [OpenClaw](https://openclaw.ai) agents with `openclaw.json` configured
+- Claude Code CLI (`claude` command)
+- `jq` (for parsing config)
 
 ## Transcripts
 
