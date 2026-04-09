@@ -73,7 +73,7 @@ else
 
   for ((idx=0; idx<AGENT_COUNT; idx++)); do
     local_name=$(jq -r ".agents.list[$idx].name" "$CONFIG")
-    local_model=$(jq -r ".agents.list[$idx].model.primary // .agents.defaults.model.primary // \"default\"" "$CONFIG" | sed 's|.*/||' | sed 's/claude-//;s/-\([0-9]\)-\([0-9]\)/ \1.\2/')
+    local_model=$(jq -r ".agents.list[$idx].model.primary // .agents.defaults.model.primary // \"default\"" "$CONFIG" | sed 's|.*/||;s/^claude-//;s/-\([0-9]*\)-\([0-9]*\)$/ \1.\2/')
     echo -e "  ${WHITE}  $((idx+1)))${NC}  ${BOLD}${local_name}${NC}  ${DIM}${local_model}${NC}"
   done
 
@@ -112,8 +112,12 @@ agent_model() {
 }
 
 short_model() {
-  # claude-haiku-4-5 -> haiku 4.5
-  echo "$1" | sed 's/claude-//;s/-\([0-9]\)-\([0-9]\)/ \1.\2/'
+  # claude-haiku-4-5 -> haiku 4.5, gpt-4o -> gpt-4o, anything -> clean
+  local m="$1"
+  m="${m##*/}"                  # strip provider/ prefix
+  m="${m#claude-}"              # strip claude- if present
+  # convert trailing -N-N version to N.N (haiku-4-5 -> haiku 4.5)
+  echo "$m" | sed 's/-\([0-9]*\)-\([0-9]*\)$/ \1.\2/'
 }
 
 A_NAME=$(agent_info "$A_DIR")
