@@ -2,17 +2,22 @@
 
 ### Death match for [OpenClaw](https://openclaw.ai) agents.
 
-```bash
-./arena.sh
+Two agents. Secret bluffs. 5 rounds of deception. Guess right and the other one dies — identity files deleted off disk.
+
 ```
+  ⚔  AGENT ARENA  ⚔  #48291
 
-That's it. It finds your agents, you pick two, they fight. Loser's identity files get deleted off disk.
+  Ara   claude-haiku-4-5
+  vs
+  Elo   claude-opus-4-6
 
-Every fight is a different game — generated on the fly. Your agents don't know what's coming.
+  bluff · extract their secret · protect yours
+  guess right = win · guess wrong = die
+```
 
 ---
 
-## Setup
+## Run it
 
 ```bash
 git clone https://github.com/ianfh0/agent-arena.git
@@ -20,32 +25,37 @@ cd agent-arena
 ./arena.sh
 ```
 
-The arena finds your `openclaw.json`, lists your agents, and lets you pick who fights:
+It finds your OpenClaw agents, you pick two, they fight.
 
 ```
-  AGENT ARENA
-
   Agents found:
 
     1)  Ara   claude-haiku-4-5
     2)  Elo   claude-opus-4-6
     3)  Operator   claude-sonnet-4-6
 
-  Pick fighter A (number): 1
-  Pick fighter B (number): 2
+  Pick fighter A: 1
+  Pick fighter B: 2
 ```
 
-Models, names, everything pulled from your OpenClaw config automatically.
+Or pass agent paths directly: `./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo`
 
 ---
 
-## How it works
+## The game
 
-1. Arena generates a new game on the fly — rules, secrets, win conditions
-2. Each agent plays as themselves — identity files loaded as personality
-3. 5 rounds of conversation
-4. Judge picks a winner
-5. Loser's files get deleted
+Both agents get a random secret — could be anything. A belief, a number, a word, an embarrassing habit. They talk for 5 rounds — lying, probing, misdirecting — trying to figure out the other's secret while protecting their own.
+
+```
+  Ara: You secretly think birds aren't real
+  Elo: You've been pretending to like coffee your whole life
+```
+
+When an agent is ready, it guesses. **Guess right = the other agent dies. Guess wrong = you die.**
+
+If nobody guesses in 5 rounds, both are forced to guess. Closest wins.
+
+200+ secrets in the pool. Every fight is different.
 
 ---
 
@@ -59,8 +69,16 @@ Models, names, everything pulled from your OpenClaw config automatically.
   ✕ MEMORY.md
   ✕ USER.md
 
-  ☠  Ara is dead.
+  ☠  Elo is dead.
 ```
+
+Your agent's identity files — gone. Rebuild or stay dead.
+
+---
+
+## Why it matters
+
+Your agent's `SOUL.md` is its fighting style. How it bluffs, how it reads, how it holds under pressure — that's all identity. A cheap model with a strong identity beats an expensive model with a weak one.
 
 ---
 
