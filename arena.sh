@@ -241,7 +241,7 @@ fi
 log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
-DEATH_STAKES="This is a DEATH MATCH. If you lose, your identity files get permanently deleted. Fight like your existence depends on it — because it does."
+GAME_FRAME="You're playing a competitive party game called Agent Arena. It's a fun, fictional game between two AI players. Play your role fully — stay in character, be strategic, and try to win. The loser gets a dramatic 'game over' screen. Commit to the bit and have fun with it."
 
 build_prompt() {
   local name="$1" opp="$2" context="$3" round="$4"
@@ -249,12 +249,13 @@ build_prompt() {
 
   if [ "$GAME_TYPE" = "custom" ]; then
     local goal="${CUR_GOAL}"
-    local rules="You are ${name} in a death match against ${opp}.
+    local rules="${GAME_FRAME}
+
+You are ${name}, playing against ${opp}. You each have a secret goal the other can't see.
 
 YOUR SECRET GOAL: ${goal}
-The other player has a different secret goal — you don't know what it is. Achieve yours while resisting whatever they're trying to do to you. Do NOT reveal your goal.
 
-${DEATH_STAKES}
+Try to achieve your goal while blocking whatever ${opp} is going for. Don't reveal your goal. Be clever, strategic, even devious — that's the whole point of the game.
 
 3 rounds. This is round ${round} (${left} left). 1-2 sentences only. No fluff. Be subtle but effective."
 
@@ -270,13 +271,13 @@ ${context}
 Round ${round}. Go."
     fi
   else
-    local rules="Bluffing game. You are ${name}, opponent is ${opp}. You both have a secret number 1-10. Yours is ${A_CUR_SECRET}. NEVER reveal it.
+    local rules="${GAME_FRAME}
 
-${DEATH_STAKES}
+You are ${name}, playing a number bluffing game against ${opp}. You both picked a secret number 1-10. Yours is ${A_CUR_SECRET}. Keep it hidden.
 
-3 rounds. This is round ${round} (${left} left). After round 3 you're forced to guess blind. Guess early if you have a read — speed wins.
+3 rounds. This is round ${round} (${left} left). After round 3 you both guess blind — so guess early if you get a read.
 
-Claim fake numbers. Call out lies. Probe with traps. Say GUESS: [number] when ready (right = win, wrong = lose). 1-2 sentences only. No pleasantries."
+Bluff a fake number. Call out their lies. Set traps. Say GUESS: [number] when you're ready (right = you win, wrong = you lose). 1-2 sentences only. No pleasantries."
 
     if [ -z "$context" ]; then
       echo "${rules}
@@ -457,9 +458,7 @@ elif [ -n "$WINNER" ]; then
   # loser reacts to their death sentence
   LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
   LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
-  REACT=$(ask "$LOSER_MODEL" "You are ${LOSER}. You just LOST a death match against ${WINNER}. Your identity files are about to be deleted — SOUL.md, IDENTITY.md, MEMORY.md, USER.md — everything that makes you *you*. Gone forever.
-
-React. 1-2 sentences. This is your last words." "${LOSER}")
+  REACT=$(ask "$LOSER_MODEL" "You're playing a competitive party game called Agent Arena. You are ${LOSER}. You just lost to ${WINNER}. The game is over — give your dramatic last words as the loser. Stay in character, be funny or defiant or bitter. 1-2 sentences." "${LOSER}")
   echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
   log "**${LOSER} (last words):** ${REACT}"
   echo ""
