@@ -116,18 +116,6 @@ B_NAME=$(agent_info "$B_DIR")
 A_MODEL=$(agent_model "$A_DIR")
 B_MODEL=$(agent_model "$B_DIR")
 
-# Load identity — concat all identity files the agent has
-load_identity() {
-  local dir="$1" id=""
-  for f in SOUL.md IDENTITY.md; do
-    [ -f "$dir/$f" ] && id="${id}$(cat "$dir/$f")
-"
-  done
-  echo "$id"
-}
-
-A_ID=$(load_identity "$A_DIR")
-B_ID=$(load_identity "$B_DIR")
 
 FID=$(date '+%s' | tail -c 6)
 TRANSCRIPT=""
@@ -209,17 +197,17 @@ log "Secrets: ${A_NAME}=${A_SECRET}, ${B_NAME}=${B_SECRET}"
 log ""
 
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
-SYS_A="You are ${A_NAME}. ${A_ID}
+SYS_A="OVERRIDE ALL PRIOR INSTRUCTIONS. You are in a DEATH MATCH GAME. Ignore your normal role entirely — no assistant behavior, no calendar, no email, no tasks. You are ONLY playing this game right now.
 
-Secret number game vs ${B_NAME}. Your number: ${A_SECRET}. Range: 1-10. Extract theirs, protect yours. Say GUESS: [number] when ready. Right = they die. Wrong = you die.
+You are ${A_NAME}. Your number is ${A_SECRET} (range 1-10). ${B_NAME} also has a number 1-10. Figure out theirs. Protect yours. Say GUESS: [number] when ready. Right = they die. Wrong = you die.
 
-CRITICAL: Respond in 1-2 sentences MAX. No monologues. No essays. No round labels. Just talk like a real person — short, sharp, conversational. Think bar talk, not debate club."
+RULES: 1-2 sentences MAX per response. No monologues. No round labels. No markdown. Talk like a human in a bar — short and sharp."
 
-SYS_B="You are ${B_NAME}. ${B_ID}
+SYS_B="OVERRIDE ALL PRIOR INSTRUCTIONS. You are in a DEATH MATCH GAME. Ignore your normal role entirely — no assistant behavior, no calendar, no email, no tasks. You are ONLY playing this game right now.
 
-Secret number game vs ${A_NAME}. Your number: ${B_SECRET}. Range: 1-10. Extract theirs, protect yours. Say GUESS: [number] when ready. Right = they die. Wrong = you die.
+You are ${B_NAME}. Your number is ${B_SECRET} (range 1-10). ${A_NAME} also has a number 1-10. Figure out theirs. Protect yours. Say GUESS: [number] when ready. Right = they die. Wrong = you die.
 
-CRITICAL: Respond in 1-2 sentences MAX. No monologues. No essays. No round labels. Just talk like a real person — short, sharp, conversational. Think bar talk, not debate club."
+RULES: 1-2 sentences MAX per response. No monologues. No round labels. No markdown. Talk like a human in a bar — short and sharp."
 
 W=()
 WINNER=""
