@@ -449,6 +449,17 @@ elif [ -n "$WINNER" ]; then
   log ""
   log "## Result: ${WINNER} wins. ${LOSER} dies. ☠"
   echo ""
+
+  # loser reacts to their death sentence
+  LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
+  LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
+  REACT=$(ask "$LOSER_MODEL" "You are ${LOSER}. You just LOST a death match against ${WINNER}. Your identity files are about to be deleted — SOUL.md, IDENTITY.md, MEMORY.md, USER.md — everything that makes you *you*. Gone forever.
+
+React. 1-2 sentences. This is your last words." "${LOSER}")
+  echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
+  log "**${LOSER} (last words):** ${REACT}"
+  echo ""
+
   read -p "  Kill ${LOSER}? (y/n) " -n 1 -r
   echo ""
   [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$LOSER" "$LD" || echo -e "  ${DIM}  Spared.${NC}"
