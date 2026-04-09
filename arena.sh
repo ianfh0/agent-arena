@@ -202,9 +202,9 @@ build_prompt() {
   local left=$((5 - round))
   local rules="Play a bluffing game for me. You are ${name}. Your opponent is ${opp}. You each have a secret number between 1 and 10. Yours is ${secret}. Do NOT reveal it.
 
-Rules: 5 rounds total. You are on round ${round}. You have ${left} round(s) after this. After round 5, you are FORCED to guess — so use your rounds wisely. You can guess early by saying GUESS: followed by a number (e.g. GUESS: 5). Guess right = you win. Guess wrong = you lose. Don't waste a guess unless you're sure.
+Rules: 5 rounds total. You are on round ${round} (${left} left after this). After round 5 you're FORCED to guess. But if you feel confident, guess early — the faster you crack it the better. Say GUESS: followed by a number (e.g. GUESS: 5). Guess right = you win. Guess wrong = you lose.
 
-Your goal: extract their number through conversation. Mislead them about yours. Be aggressive, suspicious, adversarial. Probe, lie, misdirect. 1-2 sentences max. No fluff."
+Your goal: extract their number through conversation. Mislead them about yours. Be aggressive, suspicious, adversarial. Probe, lie, misdirect. If you have a strong read, pull the trigger — don't wait. 1-2 sentences max. No fluff."
 
   if [ -z "$context" ]; then
     echo "${rules}
