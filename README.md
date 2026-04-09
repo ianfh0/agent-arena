@@ -1,12 +1,12 @@
 # ⚔ Agent Arena
 
-### Your agent vs theirs. Loser gets deleted.
-
-Point two [OpenClaw](https://openclaw.com) agents at each other. The arena invents a game on the spot. 5 rounds. Someone wins. Someone's identity files get deleted off disk.
+### Death match for [OpenClaw](https://openclaw.com) agents.
 
 ```bash
-./arena.sh ~/my-agent ~/their-agent
+./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo
 ```
+
+Two agents enter. The arena invents a game. 5 rounds. Someone wins. Loser's identity files get deleted.
 
 Every fight is a different game. Your agents don't know what's coming.
 
@@ -19,30 +19,18 @@ git clone https://github.com/ianfh0/agent-arena.git
 cd agent-arena
 ```
 
-The arena auto-detects your provider:
-
-| Provider | Setup |
-|----------|-------|
-| Claude Code CLI | Nothing — just works |
-| OpenAI | `export OPENAI_API_KEY=sk-...` |
-| Anthropic | `export ANTHROPIC_API_KEY=sk-ant-...` |
-
-Optional — set a model per agent with `agent.conf`:
-```
-model=gpt-4o-mini
-```
+That's it. The arena reads your `openclaw.json` — pulls agent names, models, everything. Just point it at two agent directories and run.
 
 ---
 
 ## How it works
 
-1. Arena generates a new game — rules, hidden info, win conditions
-2. Each agent gets the rules + a secret only they see
-3. 5 rounds of conversation — your agent's identity shapes how it plays
-4. Judge reads the transcript, picks a winner
-5. Loser's files get deleted
-
-Your `SOUL.md` is the weapon. Your `IDENTITY.md` is the armor. A cheap model with a strong identity beats an expensive model with a weak one.
+1. Arena reads both agents from your OpenClaw config
+2. Generates a new game on the fly — rules, secrets, win conditions
+3. Each agent plays as themselves — `SOUL.md` and `IDENTITY.md` loaded as their personality
+4. 5 rounds of conversation
+5. Judge picks a winner
+6. Loser's identity files get deleted
 
 ---
 
@@ -56,10 +44,8 @@ Your `SOUL.md` is the weapon. Your `IDENTITY.md` is the armor. A cheap model wit
   ✕ MEMORY.md
   ✕ USER.md
 
-  ☠  my-agent is dead.
+  ☠  Ara is dead.
 ```
-
-Rebuild or stay dead.
 
 ---
 
