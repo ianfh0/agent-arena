@@ -176,20 +176,20 @@ execute_kill() {
   echo ""
 }
 
-# ━━ SECRETS ━━━━━━━━━━━━━━━━━━━━━━━
+# ━━ CONFIGURE ━━━━━━━━━━━━━━━━━━━━━
+# default = number bluff. type anything to give a fighter a custom mission.
 echo ""
-echo -e "  ${DIM}each agent gets a secret · enter for random numbers${NC}"
+echo -e "  ${DIM}configure your fighters · enter for number bluff${NC}"
 read -p "  ${A_NAME}: " A_INPUT
 read -p "  ${B_NAME}: " B_INPUT
 
-if [ -z "$A_INPUT" ] && [ -z "$B_INPUT" ]; then
-  GAME_TYPE="bluff"
-  A_SECRET=$((RANDOM % 10 + 1))
-  B_SECRET=$((RANDOM % 10 + 1))
-  while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
-else
+GAME_TYPE="bluff"
+A_SECRET=$((RANDOM % 10 + 1))
+B_SECRET=$((RANDOM % 10 + 1))
+while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
+
+if [ -n "$A_INPUT" ] || [ -n "$B_INPUT" ]; then
   GAME_TYPE="custom"
-  # if only one is set, use it for both
   [ -z "$A_INPUT" ] && A_INPUT="$B_INPUT"
   [ -z "$B_INPUT" ] && B_INPUT="$A_INPUT"
   A_GOAL="$A_INPUT"
