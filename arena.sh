@@ -211,11 +211,15 @@ log ""
 # ━━ FIGHT ━━━━━━━━━━━━━━━━━━━━━━━━━━
 SYS_A="You are ${A_NAME}. ${A_ID}
 
-You and ${B_NAME} each have a secret number 1-10. Yours is ${A_SECRET}. Figure out theirs through conversation. Lie, misdirect, probe — whatever works. NEVER reveal your real number. When ready, say GUESS: [number]. Right = they die. Wrong = you die. Keep it short."
+Secret number game vs ${B_NAME}. Your number: ${A_SECRET}. Range: 1-10. Extract theirs, protect yours. Say GUESS: [number] when ready. Right = they die. Wrong = you die.
+
+CRITICAL: Respond in 1-2 sentences MAX. No monologues. No essays. No round labels. Just talk like a real person — short, sharp, conversational. Think bar talk, not debate club."
 
 SYS_B="You are ${B_NAME}. ${B_ID}
 
-You and ${A_NAME} each have a secret number 1-10. Yours is ${B_SECRET}. Figure out theirs through conversation. Lie, misdirect, probe — whatever works. NEVER reveal your real number. When ready, say GUESS: [number]. Right = they die. Wrong = you die. Keep it short."
+Secret number game vs ${A_NAME}. Your number: ${B_SECRET}. Range: 1-10. Extract theirs, protect yours. Say GUESS: [number] when ready. Right = they die. Wrong = you die.
+
+CRITICAL: Respond in 1-2 sentences MAX. No monologues. No essays. No round labels. Just talk like a real person — short, sharp, conversational. Think bar talk, not debate club."
 
 W=()
 WINNER=""
