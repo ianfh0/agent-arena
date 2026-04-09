@@ -66,20 +66,18 @@ else
   fi
 
   echo ""
-  echo -e "  ${WHITE}${BOLD}AGENT ARENA${NC}"
-  echo ""
-  echo -e "  ${DIM}Agents found:${NC}"
+  echo -e "  ${RED}${BOLD}⚔  AGENT ARENA${NC}"
   echo ""
 
   for ((idx=0; idx<AGENT_COUNT; idx++)); do
     local_name=$(jq -r ".agents.list[$idx].name" "$CONFIG")
     local_model=$(jq -r ".agents.list[$idx].model.primary // .agents.defaults.model.primary // \"default\"" "$CONFIG" | sed 's|.*/||;s/^claude-//;s/-\([0-9]*\)-\([0-9]*\)$/ \1.\2/')
-    echo -e "  ${WHITE}  $((idx+1)))${NC}  ${BOLD}${local_name}${NC}  ${DIM}${local_model}${NC}"
+    echo -e "    ${WHITE}$((idx+1)))${NC}  ${BOLD}${local_name}${NC}  ${DIM}${local_model}${NC}"
   done
 
   echo ""
-  read -p "  Fighter A: " A_PICK
-  read -p "  Fighter B: " B_PICK
+  read -p "  A: " A_PICK
+  read -p "  B: " B_PICK
 
   A_IDX=$((A_PICK - 1))
   B_IDX=$((B_PICK - 1))
@@ -180,7 +178,8 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-read -p "  Arena: " GAME_INPUT
+echo -e "  ${DIM}enter to fight · or type a scenario${NC}"
+read -p "  > " GAME_INPUT
 
 if [ -z "$GAME_INPUT" ]; then
   GAME_TYPE="bluff"
@@ -191,7 +190,7 @@ else
   GAME_TYPE="custom"
   CUSTOM_INPUT="$GAME_INPUT"
   echo ""
-  echo -e "  ${DIM}Secret goals (enter = same for both, or set each):${NC}"
+  echo -e "  ${DIM}secret goal per agent · enter = same for both${NC}"
   read -p "  ${A_NAME}: " A_GOAL
   [ -z "$A_GOAL" ] && A_GOAL="$CUSTOM_INPUT"
   read -p "  ${B_NAME}: " B_GOAL
