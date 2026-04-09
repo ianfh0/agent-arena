@@ -180,9 +180,7 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${DIM}enter = Number Bluff · or type a custom death match${NC}"
-echo ""
-read -p "  Game: " GAME_INPUT
+read -p "  Arena: " GAME_INPUT
 
 if [ -z "$GAME_INPUT" ]; then
   GAME_TYPE="bluff"
