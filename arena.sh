@@ -178,15 +178,16 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${DIM}1) Number Bluff${NC}"
-echo -e "  ${DIM}2) Custom${NC}"
+echo -e "    ${WHITE}1)${NC}  ${BOLD}Number Bluff${NC}  ${DIM}secret numbers 1-10 · bluff · guess to kill${NC}"
+echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom${NC}        ${DIM}give each fighter a secret mission${NC}"
 echo ""
-read -p "  > " MODE_PICK
+read -p "  Mode: " MODE_PICK
 MODE_PICK="${MODE_PICK:-1}"
 
 if [ "$MODE_PICK" = "2" ]; then
   GAME_TYPE="custom"
   echo ""
+  echo -e "  ${DIM}what should each fighter try to do?${NC}"
   read -p "  ${A_NAME}: " A_GOAL
   read -p "  ${B_NAME}: " B_GOAL
   [ -z "$A_GOAL" ] && A_GOAL="win"
