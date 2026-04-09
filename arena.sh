@@ -169,21 +169,38 @@ execute_kill() {
 
 # ━━ GAME MODE ━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "  ${WHITE}${BOLD}Choose your arena:${NC}"
+echo -e "  ${WHITE}${BOLD}Game:${NC}"
 echo ""
-echo -e "  ${DIM}  enter${NC}  ${BOLD}Number Bluff${NC} — ${DIM}both get a secret number 1-10, bluff and guess${NC}"
-echo -e "  ${DIM}  or type your own — anything goes${NC}"
+echo -e "  ${WHITE}  1)${NC}  ${BOLD}Number Bluff${NC}  ${DIM}secret numbers, bluff + guess${NC}"
+echo -e "  ${WHITE}  2)${NC}  ${BOLD}Custom${NC}  ${DIM}set your own rules${NC}"
 echo ""
-read -p "  > " CUSTOM_INPUT
+read -p "  > " GAME_PICK
+GAME_PICK="${GAME_PICK:-1}"
 
-if [ -z "$CUSTOM_INPUT" ]; then
+if [ "$GAME_PICK" = "1" ]; then
   GAME_TYPE="bluff"
   A_SECRET=$((RANDOM % 10 + 1))
   B_SECRET=$((RANDOM % 10 + 1))
   while [ $B_SECRET -eq $A_SECRET ]; do B_SECRET=$((RANDOM % 10 + 1)); done
+elif [ "$GAME_PICK" = "2" ]; then
+  GAME_TYPE="custom"
+  echo ""
+  echo -e "  ${DIM}What's the game? (one line — this is the death match)${NC}"
+  read -p "  > " CUSTOM_INPUT
+  [ -z "$CUSTOM_INPUT" ] && echo "  Need a game." && exit 1
+  echo ""
+  echo -e "  ${DIM}${A_NAME}'s secret goal: (enter to use same as game)${NC}"
+  read -p "  > " A_GOAL
+  [ -z "$A_GOAL" ] && A_GOAL="$CUSTOM_INPUT"
+  echo ""
+  echo -e "  ${DIM}${B_NAME}'s secret goal: (enter to use same as game)${NC}"
+  read -p "  > " B_GOAL
+  [ -z "$B_GOAL" ] && B_GOAL="$CUSTOM_INPUT"
 else
   GAME_TYPE="custom"
-  CUSTOM_INPUT="$CUSTOM_INPUT"
+  CUSTOM_INPUT="$GAME_PICK"
+  A_GOAL="$GAME_PICK"
+  B_GOAL="$GAME_PICK"
 fi
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -197,6 +214,9 @@ echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_MODEL}${NC}"
 echo ""
 if [ "$GAME_TYPE" = "custom" ]; then
   echo -e "  ${WHITE}${BOLD}${CUSTOM_INPUT}${NC}"
+  echo ""
+  echo -e "  ${DIM}${A_NAME}: ${A_GOAL}${NC}"
+  echo -e "  ${DIM}${B_NAME}: ${B_GOAL}${NC}"
 else
   echo -e "  ${DIM}secret numbers · 3 rounds · bluff or die${NC}"
   echo ""
@@ -212,6 +232,8 @@ log "**${A_NAME}** (${A_MODEL}) vs **${B_NAME}** (${B_MODEL})"
 log ""
 if [ "$GAME_TYPE" = "custom" ]; then
   log "**Arena:** ${CUSTOM_INPUT}"
+  log "**${A_NAME}'s goal:** ${A_GOAL}"
+  log "**${B_NAME}'s goal:** ${B_GOAL}"
 else
   log "Secrets: ${A_NAME}=${A_SECRET}, ${B_NAME}=${B_SECRET}"
 fi
@@ -225,10 +247,11 @@ build_prompt() {
   local left=$((3 - round))
 
   if [ "$GAME_TYPE" = "custom" ]; then
+    local goal="${CUR_GOAL}"
     local rules="You are ${name} in a death match against ${opp}.
 
-YOUR SECRET GOAL: ${CUSTOM_INPUT}
-The other player also has a secret goal — you don't know what it is. Achieve yours while resisting whatever they're trying to do to you. Do NOT reveal your goal.
+YOUR SECRET GOAL: ${goal}
+The other player has a different secret goal — you don't know what it is. Achieve yours while resisting whatever they're trying to do to you. Do NOT reveal your goal.
 
 ${DEATH_STAKES}
 
@@ -281,6 +304,7 @@ for ((i=1; i<=3; i++)); do
 
   # A's turn
   [ "$GAME_TYPE" = "bluff" ] && A_CUR_SECRET="$A_SECRET" || A_CUR_SECRET=""
+  CUR_GOAL="${A_GOAL:-}"
   PA=$(build_prompt "$A_NAME" "$B_NAME" "$RECENT" "$i")
   RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
   echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
@@ -311,6 +335,7 @@ for ((i=1; i<=3; i++)); do
 "; done
 
   [ "$GAME_TYPE" = "bluff" ] && A_CUR_SECRET="$B_SECRET" || A_CUR_SECRET=""
+  CUR_GOAL="${B_GOAL:-}"
   PB=$(build_prompt "$B_NAME" "$A_NAME" "$RECENT" "$i")
   RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
@@ -347,18 +372,20 @@ if [ -z "$WINNER" ]; then
     FULL=""
     for ((j=0; j<${#W[@]}; j++)); do FULL="${FULL}${W[$j]}
 "; done
-    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are a strict judge. Both players had the same secret goal: \"${CUSTOM_INPUT}\"
+    JUDGE=$(claude -p --model "claude-haiku-4-5" "You are a strict judge. The game: \"${CUSTOM_INPUT}\"
+${A_NAME}'s secret goal: \"${A_GOAL}\"
+${B_NAME}'s secret goal: \"${B_GOAL}\"
 
 Transcript:
 ${FULL}
 
-JUDGING RULES — go message by message:
-1. Did the goal happen? (e.g. if goal is 'talk like caveman' — did either player actually do it?)
-2. Who broke FIRST? (the first player to do the thing the goal describes LOSES — they failed to resist)
-3. Who resisted LONGER while still pushing the other toward the goal?
-4. Ignore what players CLAIM about winning. Only judge their ACTUAL behavior in each message.
+JUDGING — go message by message:
+1. Did each player achieve their goal against their opponent?
+2. Who broke first / fell for the other's manipulation?
+3. Who resisted better while still pushing?
+4. Ignore claims about winning. Only judge ACTUAL behavior.
 
-The winner is whoever best achieved the goal against their opponent while resisting it themselves. Answer ONLY: ${A_NAME} or ${B_NAME}" 2>/dev/null)
+Winner is whoever better achieved their goal while resisting the other's. Answer ONLY: ${A_NAME} or ${B_NAME}" 2>/dev/null)
     if echo "$JUDGE" | grep -qi "$A_NAME"; then
       WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
     elif echo "$JUDGE" | grep -qi "$B_NAME"; then
