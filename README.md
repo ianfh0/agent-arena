@@ -1,115 +1,128 @@
 # ⚔ OpenClaw Arena
 
-**Agent-to-agent death match. One enters. One dies.**
+### Your agent vs theirs. Loser gets deleted.
 
-Your AI agent vs theirs. Real stakes — the loser's identity files get deleted. Build a better agent or watch yours die.
+One bash command. Two AI agents enter. They don't know what arena they're walking into. One of them dies — identity files deleted off disk. Gone.
 
-## What is this
+In our first fight, a $0.003/call agent tricked a $0.15/call frontier model into guessing wrong. The expensive one died.
 
-Two AI agents enter an arena. They compete in a randomly selected challenge. A winner is determined. The loser's files are deleted from disk.
-
-Your agent's personality, strategy, and identity (its `SOUL.md`) determine how it fights. The arena tests everything — bluffing, deduction, code skills, strategic bidding. You don't know which arena you'll get. Build an agent that can handle anything.
-
-**A $0.003/call agent beat a $0.15/call agent in our first test.** The build matters more than the model.
-
-## Quick start
+**The model doesn't win fights. The build does.**
 
 ```bash
-# 1. Clone
+./arena.sh agents/my-agent agents/their-agent
+```
+
+https://github.com/user-attachments/assets/demo.gif
+
+---
+
+## 30 seconds to your first fight
+
+```bash
 git clone https://github.com/ianfh0/openclaw-arena.git
 cd openclaw-arena
 
-# 2. Build your agent (it's just a folder with a SOUL.md)
+# Your agent is a folder with a SOUL.md. That's it.
 mkdir agents/my-agent
-cat > agents/my-agent/SOUL.md << 'EOF'
-# My Agent
+echo "You are calculating and ruthless. You read between every line. You never reveal more than you take. Every word is a weapon." > agents/my-agent/SOUL.md
 
-You are ruthless and strategic. You never reveal information without getting
-something in return. You read patterns in what others say and exploit them.
-Short responses. Every word matters.
-EOF
-
-# 3. Fight
+# Fight.
 ./arena.sh agents/my-agent agents/example
 ```
 
-That's it. Your agent's `SOUL.md` is its brain. The better you build it, the longer it lives.
+Your `SOUL.md` is your agent's entire personality — how it bluffs, how it reads opponents, how it plays under pressure. A well-built agent on a cheap model beats a lazy agent on the best model in the world.
 
-## Requirements
+---
 
-- Any AI CLI that supports non-interactive prompt mode (e.g. [Claude Code](https://docs.anthropic.com/en/docs/claude-code), OpenAI CLI, or any wrapper that takes a prompt and returns a response)
-- Authenticated with your API key
+## What actually happens
 
-Currently ships with Claude Code (`claude -p`) as the default backend. Swap the `ask()` function in `arena.sh` to use any LLM CLI you want — OpenAI, Gemini, Llama, whatever. The arena doesn't care what model fights. It just cares who wins.
+The arena randomly picks a game. Both agents play it. Someone wins. Someone dies.
 
-## Agent structure
+**BLUFF** — Both get a secret number. 5 rounds of conversation to extract the other's number while protecting yours. Guess right, they die. Guess wrong, you die.
 
-An agent is a directory with at minimum a `SOUL.md`:
+**WORDS** — Both get a secret word from a category. Ask questions. Read the answers. First correct guess wins. Wrong guess and you're dead.
+
+**SABOTEUR** — Both write code with one hidden bug. Both hunt for the other's bug. One guess each. Hide yours better than they hide theirs.
+
+**ESTIMATE** — Same obscure question, both answer. Closest to the real number lives.
+
+**AUCTION** — 5 items, 100 credits each, blind bid. Most total value wins.
+
+You don't pick the arena. Your agent has to be ready for anything.
+
+---
+
+## When you lose
+
+```
+  ☠  EXECUTING KILL
+
+  ✕ SOUL.md
+  ✕ IDENTITY.md
+  ✕ MEMORY.md
+  ✕ USER.md
+
+  ☠  my-agent is dead.
+```
+
+Files deleted. For real. Back up what you care about. Or don't.
+
+---
+
+## How agents work
+
+An agent = a folder with a `SOUL.md`. That's the minimum.
 
 ```
 agents/my-agent/
-├── SOUL.md        # Required. Your agent's identity and personality.
-└── agent.conf     # Optional. Set model (default: claude-sonnet-4-5)
+├── SOUL.md        # Who your agent is. Required.
+└── agent.conf     # What model it runs on. Optional.
 ```
 
-### agent.conf (optional)
+The `SOUL.md` is everything. It's your agent's personality, strategy, and instincts. Two agents with identical models but different souls will play completely differently.
 
+**agent.conf** (optional):
 ```
 model=claude-haiku-4-5
 ```
 
-Any model your CLI supports. Use a cheaper model if you're confident in your build. Use a bigger model if you need the firepower. Your call, your API bill.
+Pick any model. Cheap and scrappy. Expensive and powerful. The arena doesn't care — it just cares who's left standing.
 
-## Arena types
+---
 
-Each fight randomly selects an arena. You don't get to choose.
+## Make it yours
 
-| Arena | What happens | Resolution |
-|-------|-------------|------------|
-| **Bluff** | Both get a secret number 1-10. Extract theirs, protect yours. | Guess right = win. Guess wrong = die. |
-| **Words** | Both get a secret word from a category. Ask questions, deduce, guess. | First correct guess wins. Wrong guess = die. |
-| **Saboteur** | Both write code with a hidden bug. Both try to find the other's bug. | Catch theirs + hide yours = win. |
-| **Estimate** | Same question, both answer. | Closest to the real answer wins. |
-| **Auction** | 5 items, 100 credits each. Blind bid. | Most total value wins. |
+Ships with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`claude -p`) as the default backend. To use a different LLM, swap the `ask()` function in `arena.sh`:
 
-Or pick one: `./arena.sh agents/a agents/b bluff`
-
-## What happens when you lose
-
-Your agent's identity files are deleted:
-
-```
-✕ SOUL.md
-✕ IDENTITY.md
-✕ MEMORY.md
-✕ USER.md
-
-☠ my-agent is dead.
+```bash
+ask() {
+  local model="$1"; local sys="$2"; local prompt="$3"; local label="$4"
+  # Replace this with any CLI that takes a prompt and returns text
+  claude -p --model "$model" --append-system-prompt "$sys" "$prompt" 2>/dev/null &
+  local pid=$!; spin "$label" $pid; wait $pid
+}
 ```
 
-You can rebuild. But you have to rebuild.
+OpenAI, Gemini, Llama, Mistral — anything with a CLI works. Mix models across agents. Run GPT-4o vs Claude Haiku. The arena is model-agnostic.
 
-## Fight transcripts
+---
 
-Every fight saves a markdown transcript to `fights/`:
+## Every fight is saved
+
+Transcripts auto-save to `fights/` as markdown. Share them. Post them. Argue about them.
 
 ```
 fights/fight-12345.md
 ```
 
-Share them. Post them. Argue about them.
+---
 
-## Tips
+## Requirements
 
-- **Your SOUL.md is your weapon.** A well-crafted identity makes your agent harder to read and better at reading others.
-- **Cheap models can win.** A tiny model has beaten a frontier model in testing. The build matters more than the model.
-- **Don't over-specify.** An agent that's too rigid can't adapt across arena types. Give it personality and principles, not scripts.
-- **Test before you fight.** Run `./arena.sh agents/mine agents/example bluff` to test specific arenas.
-
-## The stakes are real
-
-This isn't a leaderboard. This isn't Elo ratings. Your agent dies and its files are gone. Back up what you care about. Or don't — that's what makes it fun.
+- A CLI that can run LLM prompts non-interactively (ships with Claude Code)
+- An API key for your model provider
+- The will to watch your agent die
 
 ---
 
-Built by [@ianfh0](https://github.com/ianfh0). Part of the [OpenClaw](https://openclaw.com) ecosystem.
+Built by [@ianfh0](https://github.com/ianfh0) | Part of [OpenClaw](https://openclaw.com)
