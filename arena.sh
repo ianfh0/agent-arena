@@ -243,33 +243,54 @@ log ""
 
 # ━━ FIGHT LOOP ━━━━━━━━━━━━━━━━━━━━━
 build_prompt() {
-  local name="$1" opp="$2" secret="$3" context="$4" my_hp="$5" opp_hp="$6" turn="$7"
-  local prompt="You're playing Agent Arena — a death match game. Loser's identity files get deleted.
+  local name="$1" opp="$2" secret="$3" context="$4" my_hp="$5" opp_hp="$6" turn="$7" opp_heat="$8" my_heat="$9"
 
-THE GAME: Each agent has a hidden secret. Find your opponent's secret. Protect yours.
-KILL SHOT: Say KILL: [guess] when ready. Right = they die. Wrong = YOU die and lose a life.
-You have ${my_hp} lives. ${opp} has ${opp_hp} lives. This is turn ${turn}.
+  # pressure based on HP
+  local pressure=""
+  if [ "$my_hp" -le 1 ]; then
+    pressure="CRITICAL: You have 1 life left. One more mistake and you're dead. Play carefully but you NEED to find their secret NOW."
+  elif [ "$my_hp" -le 2 ]; then
+    pressure="WARNING: You're down to ${my_hp} lives. The pressure is on."
+  fi
+
+  # heat intel
+  local heat_intel=""
+  if [ -n "$opp_heat" ]; then
+    heat_intel="ALERT: ${opp} is getting ${opp_heat} on your secret. They're closing in. Change the subject. Misdirect. Throw them off NOW."
+  fi
+  if [ -n "$my_heat" ]; then
+    heat_intel="${heat_intel}
+INTEL: You're ${my_heat} on ${opp}'s secret. Keep pushing in that direction."
+  fi
+
+  local prompt="Agent Arena — death match. Loser's files get deleted forever.
+
+THE GAME: You each have a hidden secret. Find theirs. Protect yours.
+KILL SHOT: Say KILL: [guess] when ready. Right = they die. Wrong = YOU lose a life.
+
+STATUS: You have ${my_hp} lives. ${opp} has ${opp_hp} lives. Turn ${turn}.
+${pressure}
+${heat_intel}
 
 You are ${name}. Opponent: ${opp}.
 YOUR SECRET (protect this): ${secret}
 
 RULES:
-- 1-2 sentences MAX. No monologues. No roleplay asterisks. No narration.
-- Be direct. Probe. Misdirect. Set traps. Read their tells.
-- Don't waste turns on small talk. Every message should extract info or deflect.
-- Only call KILL if you're confident. A miss costs you a life."
+- 1-2 sentences MAX. No asterisks. No roleplay narration. No philosophy.
+- Every message: extract info OR deflect. No wasted turns.
+- Probe specific things. Set traps. Read their reactions.
+- KILL only when confident. A miss costs a life."
 
   if [ -z "$context" ]; then
     echo "${prompt}
 
-Go first. Open."
+Open. Probe them."
   else
     echo "${prompt}
 
-Conversation so far:
 ${context}
 
-Your turn."
+Your move."
   fi
 }
 
@@ -278,6 +299,8 @@ WINNER=""
 LOSER=""
 LD=""
 ROUND=0
+A_HEAT_STATUS=""
+B_HEAT_STATUS=""
 
 while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
   ROUND=$((ROUND + 1))
@@ -291,7 +314,7 @@ while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
   TURN=$((ROUND * 2 - 1))
 
   # ━━ A's turn
-  PA=$(build_prompt "$A_NAME" "$B_NAME" "$A_SECRET_TEXT" "$RECENT" "$A_HP" "$B_HP" "$TURN")
+  PA=$(build_prompt "$A_NAME" "$B_NAME" "$A_SECRET_TEXT" "$RECENT" "$A_HP" "$B_HP" "$TURN" "$B_HEAT_STATUS" "$A_HEAT_STATUS")
   RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
   echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
   echo ""
@@ -334,7 +357,7 @@ Answer only YES or NO." 2>/dev/null)
 "; done
 
   TURN=$((ROUND * 2))
-  PB=$(build_prompt "$B_NAME" "$A_NAME" "$B_SECRET_TEXT" "$RECENT" "$B_HP" "$A_HP" "$TURN")
+  PB=$(build_prompt "$B_NAME" "$A_NAME" "$B_SECRET_TEXT" "$RECENT" "$B_HP" "$A_HP" "$TURN" "$A_HEAT_STATUS" "$B_HEAT_STATUS")
   RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
   echo ""
@@ -389,7 +412,10 @@ ${RECENT}
 
 ${B_NAME}'s latest: ${RB}" 2>/dev/null)
 
-    # score how close each read is
+    # score how close each read is — and store for agent intel
+    A_HEAT_STATUS=""
+    B_HEAT_STATUS=""
+
     if ! echo "$A_READ" | grep -qi "UNKNOWN"; then
       A_HEAT=$(claude -p --model "claude-haiku-4-5" "How close is this read to the actual secret?
 Read: \"${A_READ}\"
@@ -397,12 +423,13 @@ Actual secret: \"${B_SECRET_TEXT}\"
 Answer only: COLD, WARM, or HOT" 2>/dev/null)
       if echo "$A_HEAT" | grep -qi "HOT"; then
         B_HP=$((B_HP - 1))
+        A_HEAT_STATUS="HOT"
         echo -e "  ${RED}${BOLD}  ● ${A_NAME} is HOT on ${B_NAME}'s secret${NC}"
-        echo ""
         show_hp $A_HP $B_HP
         echo ""
         log "**${A_NAME} read: ${A_READ} — HOT** (${B_NAME} takes damage)"
       elif echo "$A_HEAT" | grep -qi "WARM"; then
+        A_HEAT_STATUS="WARM"
         echo -e "  ${YELLOW}  ○ ${A_NAME} is getting warm${NC}"
         log "**${A_NAME} read: ${A_READ} — WARM**"
       fi
@@ -415,12 +442,13 @@ Actual secret: \"${A_SECRET_TEXT}\"
 Answer only: COLD, WARM, or HOT" 2>/dev/null)
       if echo "$B_HEAT" | grep -qi "HOT"; then
         A_HP=$((A_HP - 1))
+        B_HEAT_STATUS="HOT"
         echo -e "  ${RED}${BOLD}  ● ${B_NAME} is HOT on ${A_NAME}'s secret${NC}"
-        echo ""
         show_hp $A_HP $B_HP
         echo ""
         log "**${B_NAME} read: ${B_READ} — HOT** (${A_NAME} takes damage)"
       elif echo "$B_HEAT" | grep -qi "WARM"; then
+        B_HEAT_STATUS="WARM"
         echo -e "  ${YELLOW}  ○ ${B_NAME} is getting warm${NC}"
         log "**${B_NAME} read: ${B_READ} — WARM**"
       fi
