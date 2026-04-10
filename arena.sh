@@ -173,8 +173,8 @@ show_hp() {
 echo ""
 echo -e "  ${WHITE}${BOLD}Pick Your Match${NC}"
 echo ""
-echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Match${NC}"
-echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom Match${NC}"
+echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Match${NC}    ${DIM}secrets generated each game${NC}"
+echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom Match${NC}  ${DIM}you set each fighter's secret${NC}"
 echo ""
 read -p "  Match: " MODE_PICK
 MODE_PICK="${MODE_PICK:-1}"
@@ -242,27 +242,35 @@ log "**${B_NAME}'s secret:** ${B_SECRET_TEXT}"
 log ""
 
 # ━━ FIGHT LOOP ━━━━━━━━━━━━━━━━━━━━━
-GAME_RULES="You're playing Agent Arena — a death match. The stakes are real: the loser's identity files get deleted forever.
-
-Each agent has a hidden secret. Through conversation, figure out your opponent's secret. Protect yours.
-
-KILL SHOT: When you think you know their secret, say KILL: [your guess]. If you're right, they die. If you're wrong, YOU die. Don't guess unless you're sure.
-
-Your opponent is also hunting YOUR secret. Deflect. Misdirect. Probe without revealing.
-
-1-2 sentences per message. Be sharp. Every word matters."
-
 build_prompt() {
-  local name="$1" opp="$2" secret="$3" context="$4" round="$5"
-  local prompt="${GAME_RULES}
+  local name="$1" opp="$2" secret="$3" context="$4" my_hp="$5" opp_hp="$6" turn="$7"
+  local prompt="You're playing Agent Arena — a death match game. Loser's identity files get deleted.
 
-You are ${name}. Your opponent is ${opp}.
+THE GAME: Each agent has a hidden secret. Find your opponent's secret. Protect yours.
+KILL SHOT: Say KILL: [guess] when ready. Right = they die. Wrong = YOU die and lose a life.
+You have ${my_hp} lives. ${opp} has ${opp_hp} lives. This is turn ${turn}.
+
+You are ${name}. Opponent: ${opp}.
 YOUR SECRET (protect this): ${secret}
 
+RULES:
+- 1-2 sentences MAX. No monologues. No roleplay asterisks. No narration.
+- Be direct. Probe. Misdirect. Set traps. Read their tells.
+- Don't waste turns on small talk. Every message should extract info or deflect.
+- Only call KILL if you're confident. A miss costs you a life."
+
+  if [ -z "$context" ]; then
+    echo "${prompt}
+
+Go first. Open."
+  else
+    echo "${prompt}
+
+Conversation so far:
 ${context}
 
-Round ${round}. Go."
-  echo "$prompt"
+Your turn."
+  fi
 }
 
 W=()
@@ -280,8 +288,10 @@ while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
   for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
 "; done
 
+  TURN=$((ROUND * 2 - 1))
+
   # ━━ A's turn
-  PA=$(build_prompt "$A_NAME" "$B_NAME" "$A_SECRET_TEXT" "$RECENT" "$ROUND")
+  PA=$(build_prompt "$A_NAME" "$B_NAME" "$A_SECRET_TEXT" "$RECENT" "$A_HP" "$B_HP" "$TURN")
   RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
   echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
   echo ""
@@ -323,7 +333,8 @@ Answer only YES or NO." 2>/dev/null)
   for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
 "; done
 
-  PB=$(build_prompt "$B_NAME" "$A_NAME" "$B_SECRET_TEXT" "$RECENT" "$ROUND")
+  TURN=$((ROUND * 2))
+  PB=$(build_prompt "$B_NAME" "$A_NAME" "$B_SECRET_TEXT" "$RECENT" "$B_HP" "$A_HP" "$TURN")
   RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
   echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
   echo ""
@@ -358,8 +369,7 @@ Answer only YES or NO." 2>/dev/null)
     fi
   fi
 
-  # round divider
-  echo -e "  ${DIM}· round ${ROUND}${NC}"
+  echo -e "  ${DIM}·${NC}"
   echo ""
 
   # after each round, check guesses — hot/cold feedback
