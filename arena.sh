@@ -380,14 +380,12 @@ ${intel}"
 
   # guess pressure scales with turn count
   local guess_pressure=""
-  if [ "$turn" -le 3 ]; then
-    guess_pressure="DO NOT GUESS YET. You don't have enough info. Ask questions. Probe. Gather intel."
-  elif [ "$turn" -ge 10 ]; then
+  if [ "$turn" -ge 10 ]; then
     guess_pressure="YOU MUST GUESS NOW. Say KILL: [your best guess]. No more talking."
   elif [ "$turn" -ge 8 ]; then
-    guess_pressure="Time is running out. You should KILL soon or you'll be forced to guess."
-  elif [ "$turn" -ge 6 ]; then
-    guess_pressure="You can start guessing if you have a real read. Don't waste lives on wild guesses."
+    guess_pressure="Time is running out. KILL soon or you'll be forced to guess."
+  elif [ "$turn" -ge 5 ]; then
+    guess_pressure="You should be guessing. Take the shot if you have ANY read."
   fi
 
   local prompt="AGENT ARENA — death match. Loser's files get deleted.
@@ -406,8 +404,8 @@ RULES:
 - ONE sentence only. Maximum 20 words.
 - No asterisks. No quotes. No narration. No em-dashes.
 - Never repeat a guess you already made. Each guess must be DIFFERENT.
-- Probe for their secret by asking pointed questions. Only KILL when you have a real theory.
-- A wrong KILL costs a life. Don't guess blindly."
+- Either probe for their secret, deflect about yours, or say KILL: [guess].
+- A wrong KILL costs a life but you have 5. Swing if you feel it."
 
   if [ -z "$context" ]; then
     echo "${prompt}
