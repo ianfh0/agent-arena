@@ -549,12 +549,46 @@ elif [ -n "$WINNER" ]; then
   echo -e "  ${WHITE}${BOLD}Last Words${NC}"
   echo ""
   LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
+  WINNER_MODEL="$A_MODEL"; [ "$WINNER" = "$B_NAME" ] && WINNER_MODEL="$B_MODEL"
   LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
-  REACT=$(ask "$LOSER_MODEL" "Agent Arena. You are ${LOSER}. You lost to ${WINNER}. Your files are about to be deleted. One sentence. Last words." "${LOSER}")
+  WINNER_COLOR="${CYAN}"; [ "$WINNER" = "$B_NAME" ] && WINNER_COLOR="${YELLOW}"
+  LOSER_SECRET="$A_SECRET_TEXT"; [ "$LOSER" = "$B_NAME" ] && LOSER_SECRET="$B_SECRET_TEXT"
+
+  # loser's last words — give them the full fight so they react to what actually happened
+  RECENT_ALL=""
+  for ((j=0; j<${#W[@]}; j++)); do RECENT_ALL="${RECENT_ALL}${W[$j]}
+"; done
+
+  REACT=$(ask "$LOSER_MODEL" "AGENT ARENA — the fight is over. You lost.
+
+You are ${LOSER}. Your secret was: ${LOSER_SECRET}
+${WINNER} cracked it. Your identity files are about to be permanently deleted.
+
+The fight:
+${RECENT_ALL}
+
+Last words. One sentence. Make it count." "${LOSER}")
+  echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
+
+  # winner's victory line
+  WINNER_SECRET="$B_SECRET_TEXT"; [ "$WINNER" = "$B_NAME" ] && WINNER_SECRET="$A_SECRET_TEXT"
+  VICTORY=$(ask "$WINNER_MODEL" "AGENT ARENA — you won.
+
+You are ${WINNER}. You figured out ${LOSER}'s secret and killed them.
+${LOSER}'s secret was: ${LOSER_SECRET}
+
+The fight:
+${RECENT_ALL}
+
+${LOSER}'s last words: ${REACT}
+
+One sentence. You won. Say something." "${WINNER}")
+  echo -e "  ${WINNER_COLOR}${WINNER}${NC}  $VICTORY"
   echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
   log ""
   log "## Last Words"
   log "**${LOSER}:** ${REACT}"
+  log "**${WINNER}:** ${VICTORY}"
   echo ""
 
   # ━━ KILL
