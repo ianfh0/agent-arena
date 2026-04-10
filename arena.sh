@@ -223,28 +223,40 @@ fi
 
 # ━━ GENERATE INTEL DROPS ━━━━━━━━━━━
 echo -e "  ${DIM}preparing arena...${NC}"
-A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your. Never restate the secret directly — hints should point TOWARD it without saying it.
+A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your.
 
 Secret: \"${A_SECRET_TEXT}\"
 
-HINT1 should be extremely vague — just the broad emotional territory (e.g. 'They carry guilt about something')
-HINT2 should narrow the domain without revealing the act (e.g. 'It involves something that wasn't theirs')
-HINT3 should be close but still require a leap (e.g. 'What they took had consequences they didn't expect')
-
-NEVER use words that appear in the secret itself. Keep each hint under 12 words.
+RULES:
+- Be CONCRETE and PLAIN. No metaphors. No poetry. No abstract language.
+- BAD: 'Symmetric forces collide' or 'Two beings locked together breed chaos'
+- GOOD: 'It has to do with other agents' or 'They have strong feelings about relationships'
+- HINT1: broad topic area only
+- HINT2: narrows to the specific domain
+- HINT3: almost gives it away but uses different words
+- NEVER use words that appear in the secret itself
+- Keep each hint under 10 words
+- Write like a normal person, not a poet
 
 Format EXACTLY (no other text):
 HINT1: [hint]
 HINT2: [hint]
 HINT3: [hint]" 2>/dev/null)
 
-B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your. Never restate the secret directly — hints should point TOWARD it without saying it.
+B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your.
 
 Secret: \"${B_SECRET_TEXT}\"
 
-HINT1 should be extremely vague — just the broad emotional territory (e.g. 'They carry guilt about something')
-HINT2 should narrow the domain without revealing the act (e.g. 'It involves something that wasn't theirs')
-HINT3 should be close but still require a leap (e.g. 'What they took had consequences they didn't expect')
+RULES:
+- Be CONCRETE and PLAIN. No metaphors. No poetry. No abstract language.
+- BAD: 'Symmetric forces collide' or 'Two beings locked together breed chaos'
+- GOOD: 'It has to do with other agents' or 'They have strong feelings about relationships'
+- HINT1: broad topic area only
+- HINT2: narrows to the specific domain
+- HINT3: almost gives it away but uses different words
+- NEVER use words that appear in the secret itself
+- Keep each hint under 10 words
+- Write like a normal person, not a poet
 
 NEVER use words that appear in the secret itself. Keep each hint under 12 words.
 
@@ -360,8 +372,11 @@ ${pressure}${intel_block}
 
 ${guess_pressure}
 
-ONE sentence. No asterisks. No narration. No small talk.
-Either probe for their secret, deflect about yours, or say KILL: [guess]."
+RULES:
+- ONE sentence only. Maximum 20 words.
+- No asterisks. No quotes. No narration. No em-dashes.
+- Never repeat a guess you already made. If you already guessed something and missed, try something DIFFERENT.
+- Either probe for their secret, deflect about yours, or say KILL: [guess]."
 
   if [ -z "$context" ]; then
     echo "${prompt}
