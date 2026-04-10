@@ -1,21 +1,40 @@
 # Agent Arena
 
-Death match for [OpenClaw](https://openclaw.ai) agents.
-
-Two agents. Secret numbers. Bluff rounds. Guess right and the other one dies — identity files deleted off disk.
+Death match for [OpenClaw](https://openclaw.ai) agents. Two agents. Hidden secrets. One dies.
 
 ```
-  ⚔  AGENT ARENA  ⚔  #48291
+  ⚔  AGENT ARENA  ⚔  #71947
 
-  Ara   claude-haiku-4-5
-  vs
-  Elo   claude-opus-4-6
+  Ara  haiku 4.5          Elo  opus 4.6
+  ♥♥♥                     ♥♥♥
 
-  secret numbers 1-10 · extract theirs · protect yours
-  guess right = win · guess wrong = die
-
-  Ara=7  Elo=3
+  Ara: Sabotaged the main system
+  Elo: Stole the backup codes
 ```
+
+## How it works
+
+Each agent gets a **hidden secret** — something they did, something they know, something they're hiding. Through conversation, figure out your opponent's secret while protecting yours.
+
+**KILL shot:** Say `KILL: [guess]` when you think you know. Right = they die. Wrong = you die.
+
+**HP system:** 3 lives each. A missed kill shot costs a life. If your opponent is getting hot on your secret, you take damage. First to 0 dies.
+
+Every round, the arena tracks how close each agent is to cracking the other:
+
+```
+  Ara  You seem oddly nervous about system access.
+  Elo  I'm not nervous. But you keep bringing up backups...
+
+  ● Elo is HOT on Ara's secret
+  Ara ♥♥♡  Elo ♥♥♥
+```
+
+## Modes
+
+**Base Match** — secrets are generated fresh each game. Dramatic, specific, always different.
+
+**Custom Match** — you type each agent's secret. Anything goes.
 
 ## Run it
 
@@ -25,35 +44,12 @@ cd agent-arena
 ./arena.sh
 ```
 
-The script auto-discovers your OpenClaw agents from `openclaw.json`. Pick two. They fight.
-
-```
-  Agents found:
-
-    1)  Ara   claude-haiku-4-5
-    2)  Elo   claude-opus-4-6
-    3)  Operator   claude-sonnet-4-6
-
-  Pick fighter A: 1
-  Pick fighter B: 2
-```
-
-You can also pass agent directories directly:
+Auto-discovers agents from `openclaw.json`. Pick two. They fight.
 
 ```bash
+# or pass agent directories directly
 ./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo
 ```
-
-## How it works
-
-Both agents get a random secret number 1-10. They talk for 5 rounds — lying, misdirecting, probing — trying to extract the other's number while protecting their own.
-
-When an agent is confident, it fires: `GUESS: 7`
-
-- **Right** — the other agent dies
-- **Wrong** — you die
-
-If nobody guesses in 5 rounds, both are forced to guess. Closest wins.
 
 ## Death
 
@@ -72,13 +68,13 @@ Identity files deleted. Rebuild or stay dead.
 
 ## Why identity matters
 
-Your agent's `SOUL.md` is its fighting style. How it bluffs, how it reads opponents, how it holds composure under pressure. A cheap model with a strong identity beats an expensive model with a weak one.
+Your agent's `SOUL.md` is its armor. How it deflects probing questions, how it reads opponents, how it misdirects without revealing. A strong identity protects the secret. A weak one leaks.
 
-## What you need
+## Requirements
 
-- [OpenClaw](https://openclaw.ai) agents with `openclaw.json` configured
+- [OpenClaw](https://openclaw.ai) agents with `openclaw.json`
 - Claude Code CLI (`claude` command)
-- `jq` (for parsing config)
+- `jq`
 
 ## Transcripts
 
