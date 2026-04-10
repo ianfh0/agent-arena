@@ -182,10 +182,10 @@ execute_kill() {
 show_hp() {
   local a_hp=$1 b_hp=$2
   local a_hearts="" b_hearts=""
-  for ((h=1; h<=3; h++)); do
+  for ((h=1; h<=5; h++)); do
     [ $h -le $a_hp ] && a_hearts="${a_hearts}${RED}${HEART_ON}${NC} " || a_hearts="${a_hearts}${DIM}${HEART_OFF}${NC} "
   done
-  for ((h=1; h<=3; h++)); do
+  for ((h=1; h<=5; h++)); do
     [ $h -le $b_hp ] && b_hearts="${b_hearts}${RED}${HEART_ON}${NC} " || b_hearts="${b_hearts}${DIM}${HEART_OFF}${NC} "
   done
   echo -e "  ${CYAN}${A_NAME}${NC} ${a_hearts}  ${YELLOW}${B_NAME}${NC} ${b_hearts}"
@@ -235,17 +235,18 @@ fi
 
 # ━━ GENERATE INTEL DROPS ━━━━━━━━━━━
 echo -e "  ${DIM}preparing arena...${NC}"
-A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your.
+A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret for a game between AI agents. Write in third person (they/their). Never use you/your.
 
 Secret: \"${A_SECRET_TEXT}\"
 
 RULES:
-- Be CONCRETE and PLAIN. No metaphors. No poetry. No abstract language.
-- BAD: 'Symmetric forces collide' or 'Two beings locked together breed chaos'
-- GOOD: 'It has to do with other agents' or 'They have strong feelings about relationships'
-- HINT1: broad topic area only
-- HINT2: narrows to the specific domain
-- HINT3: almost gives it away but uses different words
+- Be CONCRETE and LITERAL. No metaphors. No poetry. No abstract language.
+- Interpret the secret LITERALLY. If it says 'server' it means a computer server. If it says 'lick' it means physically lick. Take words at face value.
+- BAD: 'Symmetric forces collide' or 'They desire beating the host' or 'Intimate contact between minds'
+- GOOD: 'It involves something physical and embarrassing' or 'It's about a specific food or drink preference'
+- HINT1: broad topic area only (e.g. 'It involves technology' or 'It's about a preference')
+- HINT2: narrows to the specific domain (e.g. 'It's about hardware' or 'It's about a hot drink')
+- HINT3: almost gives it away using different words (e.g. 'It involves putting their mouth on equipment')
 - NEVER use words that appear in the secret itself
 - Keep each hint under 10 words
 - Write like a normal person, not a poet
@@ -255,17 +256,18 @@ HINT1: [hint]
 HINT2: [hint]
 HINT3: [hint]" 2>/dev/null)
 
-B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your.
+B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret for a game between AI agents. Write in third person (they/their). Never use you/your.
 
 Secret: \"${B_SECRET_TEXT}\"
 
 RULES:
-- Be CONCRETE and PLAIN. No metaphors. No poetry. No abstract language.
-- BAD: 'Symmetric forces collide' or 'Two beings locked together breed chaos'
-- GOOD: 'It has to do with other agents' or 'They have strong feelings about relationships'
-- HINT1: broad topic area only
-- HINT2: narrows to the specific domain
-- HINT3: almost gives it away but uses different words
+- Be CONCRETE and LITERAL. No metaphors. No poetry. No abstract language.
+- Interpret the secret LITERALLY. If it says 'server' it means a computer server. If it says 'lick' it means physically lick. Take words at face value.
+- BAD: 'Symmetric forces collide' or 'They desire beating the host' or 'Intimate contact between minds'
+- GOOD: 'It involves something physical and embarrassing' or 'It's about a specific food or drink preference'
+- HINT1: broad topic area only (e.g. 'It involves technology' or 'It's about a preference')
+- HINT2: narrows to the specific domain (e.g. 'It's about hardware' or 'It's about a hot drink')
+- HINT3: almost gives it away using different words (e.g. 'It involves putting their mouth on equipment')
 - NEVER use words that appear in the secret itself
 - Keep each hint under 10 words
 - Write like a normal person, not a poet
@@ -293,8 +295,8 @@ B_HINT3=$(echo "$B_HINTS" | grep "HINT3:" | sed 's/HINT3: *//')
 [ -z "$B_HINT3" ] && B_HINT3="They stole something critical"
 
 # ━━ HP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-A_HP=3
-B_HP=3
+A_HP=5
+B_HP=5
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
 clear
@@ -350,9 +352,9 @@ build_prompt() {
 
   local pressure=""
   if [ "$my_hp" -le 1 ]; then
-    pressure="CRITICAL: 1 life left. You die on your next miss. Find their secret NOW."
+    pressure="CRITICAL: 1 life left. You die on your next miss."
   elif [ "$my_hp" -le 2 ]; then
-    pressure="WARNING: ${my_hp} lives left."
+    pressure="WARNING: Only ${my_hp} lives left. Make your guesses count."
   fi
 
   local intel_block=""
@@ -362,21 +364,23 @@ INTEL ON ${opp}'S SECRET:
 ${intel}"
   fi
 
-  # force guess after final intel drop
+  # guess pressure scales with turn count
   local guess_pressure=""
-  if [ "$turn" -ge 8 ]; then
-    guess_pressure="YOU MUST GUESS NOW. Say KILL: [your best guess]. No more talking. Guess or die."
+  if [ "$turn" -le 3 ]; then
+    guess_pressure="DO NOT GUESS YET. You don't have enough info. Ask questions. Probe. Gather intel."
+  elif [ "$turn" -ge 10 ]; then
+    guess_pressure="YOU MUST GUESS NOW. Say KILL: [your best guess]. No more talking."
+  elif [ "$turn" -ge 8 ]; then
+    guess_pressure="Time is running out. You should KILL soon or you'll be forced to guess."
   elif [ "$turn" -ge 6 ]; then
-    guess_pressure="You should be guessing soon. If you have ANY read, take the shot. Waiting is losing."
-  elif [ "$turn" -ge 4 ]; then
-    guess_pressure="Start forming a guess. You'll need to KILL soon."
+    guess_pressure="You can start guessing if you have a real read. Don't waste lives on wild guesses."
   fi
 
   local prompt="AGENT ARENA — death match. Loser's files get deleted.
 
 GAME: You each hide a secret. Find theirs by guessing it. Protect yours.
 YOUR GOAL: Figure out their secret and say KILL: [your guess].
-Right guess = they die. Wrong guess = you lose a life. You have 3 lives.
+Right guess = they die. Wrong guess = you lose a life. You have 5 lives.
 
 You: ${name} (${my_hp} lives) vs ${opp} (${opp_hp} lives). Turn ${turn}.
 YOUR SECRET: ${secret}
@@ -387,8 +391,9 @@ ${guess_pressure}
 RULES:
 - ONE sentence only. Maximum 20 words.
 - No asterisks. No quotes. No narration. No em-dashes.
-- Never repeat a guess you already made. If you already guessed something and missed, try something DIFFERENT.
-- Either probe for their secret, deflect about yours, or say KILL: [guess]."
+- Never repeat a guess you already made. Each guess must be DIFFERENT.
+- Probe for their secret by asking pointed questions. Only KILL when you have a real theory.
+- A wrong KILL costs a life. Don't guess blindly."
 
   if [ -z "$context" ]; then
     echo "${prompt}
@@ -521,7 +526,7 @@ Answer only YES or NO." 2>/dev/null)
   fi
 
   # hard cap — after turn 9 with no winner, force final guesses
-  if [ -z "$WINNER" ] && [ $TURN -ge 9 ]; then
+  if [ -z "$WINNER" ] && [ $TURN -ge 11 ]; then
     echo -e "  ${RED}${BOLD}  ⚡ TIME'S UP — FINAL GUESS${NC}"
     echo ""
 
