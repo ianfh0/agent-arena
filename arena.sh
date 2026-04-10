@@ -653,8 +653,8 @@ if $POST_RESULT; then
     fi
 
     if [ -n "${FEED_BODY:-}" ]; then
-      gh api "repos/${ARENA_REPO}/discussions/${KILL_FEED_DISCUSSION}/comments" \
-        -f body="$FEED_BODY" --silent 2>/dev/null \
+      DISCUSSION_ID="D_kwDOR-buXM4AlmMx"
+      gh api graphql -f query="mutation { addDiscussionComment(input: { discussionId: \"${DISCUSSION_ID}\", body: \"${FEED_BODY}\" }) { comment { url } } }" --silent 2>/dev/null \
         && echo -e "  ${GREEN}${BOLD}  posted to kill feed${NC}" \
         || echo -e "  ${DIM}  couldn't post to kill feed${NC}"
     fi
