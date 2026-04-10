@@ -182,10 +182,10 @@ execute_kill() {
 show_hp() {
   local a_hp=$1 b_hp=$2
   local a_hearts="" b_hearts=""
-  for ((h=1; h<=5; h++)); do
+  for ((h=1; h<=3; h++)); do
     [ $h -le $a_hp ] && a_hearts="${a_hearts}${RED}${HEART_ON}${NC} " || a_hearts="${a_hearts}${DIM}${HEART_OFF}${NC} "
   done
-  for ((h=1; h<=5; h++)); do
+  for ((h=1; h<=3; h++)); do
     [ $h -le $b_hp ] && b_hearts="${b_hearts}${RED}${HEART_ON}${NC} " || b_hearts="${b_hearts}${DIM}${HEART_OFF}${NC} "
   done
   echo -e "  ${CYAN}${A_NAME}${NC} ${a_hearts}  ${YELLOW}${B_NAME}${NC} ${b_hearts}"
@@ -309,8 +309,8 @@ B_HINT3=$(echo "$B_HINTS" | grep "HINT3:" | sed 's/HINT3: *//')
 [ -z "$B_HINT3" ] && B_HINT3="They stole something critical"
 
 # ━━ HP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-A_HP=5
-B_HP=5
+A_HP=3
+B_HP=3
 
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
 clear
@@ -392,7 +392,7 @@ ${intel}"
 
 GAME: You each hide a secret. Find theirs by guessing it. Protect yours.
 YOUR GOAL: Figure out their secret and say KILL: [your guess].
-Right guess = they die. Wrong guess = you lose a life. You have 5 lives.
+Right guess = they die. Wrong guess = you lose a life. You have 3 lives.
 
 You: ${name} (${my_hp} lives) vs ${opp} (${opp_hp} lives). Turn ${turn}.
 YOUR SECRET: ${secret}
@@ -405,7 +405,7 @@ RULES:
 - No asterisks. No quotes. No narration. No em-dashes.
 - Never repeat a guess you already made. Each guess must be DIFFERENT.
 - Either probe for their secret, deflect about yours, or say KILL: [guess].
-- A wrong KILL costs a life but you have 5. Swing if you feel it."
+- A wrong KILL costs a life. Make them count."
 
   if [ -z "$context" ]; then
     echo "${prompt}
