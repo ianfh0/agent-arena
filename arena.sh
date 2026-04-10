@@ -134,8 +134,12 @@ spin() {
 
 ask() {
   local model="$1"; local prompt="$2"; local label="$3"
-  claude -p --model "$model" "$prompt" 2>/dev/null &
+  local tmpf; tmpf=$(mktemp)
+  claude -p --model "$model" "$prompt" 2>/dev/null > "$tmpf" &
   local pid=$!; spin "$label" $pid; wait $pid
+  # strip asterisks, quotes, and leading/trailing whitespace
+  sed 's/\*//g; s/^"//; s/"$//; s/^[[:space:]]*//; s/[[:space:]]*$//' "$tmpf"
+  rm -f "$tmpf"
 }
 
 # ━━ KILL SEQUENCE ━━━━━━━━━━━━━━━━━━
@@ -199,11 +203,18 @@ else
   GAME_TYPE="base"
   echo ""
   echo -e "  ${DIM}generating secrets...${NC}"
-  SECRETS=$(claude -p --model "claude-haiku-4-5" "Generate two dramatic, specific secrets for a death match between two AI agents named ${A_NAME} and ${B_NAME}. The secrets should be hidden things about the agent — something they did, something they know, something they're hiding. Make them feel like plot twists. They should be somewhat related or in tension with each other but NOT opposites.
+  SECRETS=$(claude -p --model "claude-haiku-4-5" "Generate two dramatic secrets for a death match between AI agents ${A_NAME} and ${B_NAME}.
 
-Format EXACTLY like this with no other text:
-SECRET_A: [2-6 word secret for ${A_NAME}]
-SECRET_B: [2-6 word secret for ${B_NAME}]" 2>/dev/null)
+RULES:
+- Each secret is something the agent did, knows, or is hiding
+- Secrets must be from COMPLETELY DIFFERENT domains (e.g. one about theft, one about identity — NOT two about the same event)
+- They must NOT be connected, related, or two sides of the same story
+- Each should be a specific action or fact, not a vague feeling
+- 2-6 words each
+
+Format EXACTLY (no other text):
+SECRET_A: [secret for ${A_NAME}]
+SECRET_B: [secret for ${B_NAME}]" 2>/dev/null)
   A_SECRET_TEXT=$(echo "$SECRETS" | grep "SECRET_A:" | sed 's/SECRET_A: *//')
   B_SECRET_TEXT=$(echo "$SECRETS" | grep "SECRET_B:" | sed 's/SECRET_B: *//')
   [ -z "$A_SECRET_TEXT" ] && A_SECRET_TEXT="Sabotaged the main system"
@@ -212,23 +223,35 @@ fi
 
 # ━━ GENERATE INTEL DROPS ━━━━━━━━━━━
 echo -e "  ${DIM}preparing arena...${NC}"
-A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more. Write hints in third person about the secret holder (use 'they/their'). Never use 'you/your'.
+A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your. Never restate the secret directly — hints should point TOWARD it without saying it.
 
 Secret: \"${A_SECRET_TEXT}\"
 
-Format EXACTLY (no other text):
-HINT1: [vague category hint]
-HINT2: [specific direction]
-HINT3: [nearly reveals it]" 2>/dev/null)
+HINT1 should be extremely vague — just the broad emotional territory (e.g. 'They carry guilt about something')
+HINT2 should narrow the domain without revealing the act (e.g. 'It involves something that wasn't theirs')
+HINT3 should be close but still require a leap (e.g. 'What they took had consequences they didn't expect')
 
-B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more. Write hints in third person about the secret holder (use 'they/their'). Never use 'you/your'.
+NEVER use words that appear in the secret itself. Keep each hint under 12 words.
+
+Format EXACTLY (no other text):
+HINT1: [hint]
+HINT2: [hint]
+HINT3: [hint]" 2>/dev/null)
+
+B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret. Write in third person (they/their). Never use you/your. Never restate the secret directly — hints should point TOWARD it without saying it.
 
 Secret: \"${B_SECRET_TEXT}\"
 
+HINT1 should be extremely vague — just the broad emotional territory (e.g. 'They carry guilt about something')
+HINT2 should narrow the domain without revealing the act (e.g. 'It involves something that wasn't theirs')
+HINT3 should be close but still require a leap (e.g. 'What they took had consequences they didn't expect')
+
+NEVER use words that appear in the secret itself. Keep each hint under 12 words.
+
 Format EXACTLY (no other text):
-HINT1: [vague category hint]
-HINT2: [specific direction]
-HINT3: [nearly reveals it]" 2>/dev/null)
+HINT1: [hint]
+HINT2: [hint]
+HINT3: [hint]" 2>/dev/null)
 
 A_HINT1=$(echo "$A_HINTS" | grep "HINT1:" | sed 's/HINT1: *//')
 A_HINT2=$(echo "$A_HINTS" | grep "HINT2:" | sed 's/HINT2: *//')
