@@ -303,17 +303,30 @@ INTEL ON ${opp}'S SECRET:
 ${intel}"
   fi
 
+  # force guess after final intel drop
+  local guess_pressure=""
+  if [ "$turn" -ge 8 ]; then
+    guess_pressure="YOU MUST GUESS NOW. Say KILL: [your best guess]. No more talking. Guess or die."
+  elif [ "$turn" -ge 6 ]; then
+    guess_pressure="You should be guessing soon. If you have ANY read, take the shot. Waiting is losing."
+  elif [ "$turn" -ge 4 ]; then
+    guess_pressure="Start forming a guess. You'll need to KILL soon."
+  fi
+
   local prompt="AGENT ARENA — death match. Loser's files get deleted.
 
-GAME: You each hide a secret. Find theirs. Protect yours.
-KILL: Say KILL: [guess] to strike. Right = they die. Wrong = you lose a life.
+GAME: You each hide a secret. Find theirs by guessing it. Protect yours.
+YOUR GOAL: Figure out their secret and say KILL: [your guess].
+Right guess = they die. Wrong guess = you lose a life. You have 3 lives.
 
 You: ${name} (${my_hp} lives) vs ${opp} (${opp_hp} lives). Turn ${turn}.
 YOUR SECRET: ${secret}
 ${pressure}${intel_block}
 
-ONE sentence only. No asterisks. No narration. No filler.
-Probe, trap, deflect, or KILL. Every turn counts."
+${guess_pressure}
+
+ONE sentence. No asterisks. No narration. No small talk.
+Either probe for their secret, deflect about yours, or say KILL: [guess]."
 
   if [ -z "$context" ]; then
     echo "${prompt}
@@ -437,6 +450,74 @@ Answer only YES or NO." 2>/dev/null)
       fi
     fi
   fi
+
+  # hard cap — after turn 9 with no winner, force final guesses
+  if [ -z "$WINNER" ] && [ $TURN -ge 9 ]; then
+    echo -e "  ${RED}${BOLD}  ⚡ TIME'S UP — FINAL GUESS${NC}"
+    echo ""
+
+    RECENT=""
+    S=$(( ${#W[@]} - 8 )); [ $S -lt 0 ] && S=0
+    for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
+"; done
+
+    FA=$(ask "$A_MODEL" "AGENT ARENA — FINAL GUESS. You are ${A_NAME}. Your opponent is ${B_NAME}.
+
+Intel on ${B_NAME}:
+${A_INTEL}
+
+Conversation:
+${RECENT}
+
+Time is up. You MUST guess their secret NOW. Say only KILL: [your best guess]. Nothing else." "${A_NAME} final")
+    echo -e "  ${CYAN}${A_NAME}${NC}  $FA"
+    FA_GUESS=$(echo "$FA" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
+    [ -z "$FA_GUESS" ] && FA_GUESS="$FA"
+
+    FB=$(ask "$B_MODEL" "AGENT ARENA — FINAL GUESS. You are ${B_NAME}. Your opponent is ${A_NAME}.
+
+Intel on ${A_NAME}:
+${B_INTEL}
+
+Conversation:
+${RECENT}
+
+Time is up. You MUST guess their secret NOW. Say only KILL: [your best guess]. Nothing else." "${B_NAME} final")
+    echo -e "  ${YELLOW}${B_NAME}${NC}  $FB"
+    FB_GUESS=$(echo "$FB" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
+    [ -z "$FB_GUESS" ] && FB_GUESS="$FB"
+
+    echo ""
+
+    # check both guesses
+    A_MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+Secret: \"${B_SECRET_TEXT}\"
+Guess: \"${FA_GUESS}\"
+Answer only YES or NO." 2>/dev/null)
+    B_MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+Secret: \"${A_SECRET_TEXT}\"
+Guess: \"${FB_GUESS}\"
+Answer only YES or NO." 2>/dev/null)
+
+    A_HIT=false; echo "$A_MATCH" | grep -qi "YES" && A_HIT=true
+    B_HIT=false; echo "$B_MATCH" | grep -qi "YES" && B_HIT=true
+
+    if $A_HIT && ! $B_HIT; then
+      echo -e "  ${GREEN}${BOLD}  ✓ ${A_NAME} got it${NC}"
+      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
+    elif $B_HIT && ! $A_HIT; then
+      echo -e "  ${GREEN}${BOLD}  ✓ ${B_NAME} got it${NC}"
+      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
+    elif $A_HIT && $B_HIT; then
+      echo -e "  ${RED}${BOLD}  BOTH GOT IT — DOUBLE KILL${NC}"
+      WINNER="TIE"
+    else
+      echo -e "  ${DIM}  Both missed.${NC}"
+      WINNER="NO CONTEST"
+    fi
+    log "**FINAL: ${A_NAME} guessed '${FA_GUESS}', ${B_NAME} guessed '${FB_GUESS}'**"
+    break
+  fi
 done
 
 # ━━ RESULT ━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -444,7 +525,12 @@ echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-if [ -z "$WINNER" ]; then
+if [ "$WINNER" = "NO CONTEST" ]; then
+  echo -e "  ${WHITE}${BOLD}  NO CONTEST${NC}"
+  echo ""
+  echo -e "  ${DIM}Both fighters live.${NC}"
+  log "## Result: NO CONTEST"
+elif [ -z "$WINNER" ]; then
   echo -e "  ${WHITE}${BOLD}  NO CONTEST${NC}"
   echo ""
   echo -e "  ${DIM}Both fighters live.${NC}"
