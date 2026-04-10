@@ -191,7 +191,6 @@ if [ "$MODE_PICK" = "2" ]; then
   B_SECRET_TEXT="$B_SECRET_RAW"
 else
   GAME_TYPE="base"
-  # generate two dramatic secrets
   echo ""
   echo -e "  ${DIM}generating secrets...${NC}"
   SECRETS=$(claude -p --model "claude-haiku-4-5" "Generate two dramatic, specific secrets for a death match between two AI agents named ${A_NAME} and ${B_NAME}. The secrets should be hidden things about the agent — something they did, something they know, something they're hiding. Make them feel like plot twists. They should be somewhat related or in tension with each other but NOT opposites.
@@ -201,10 +200,44 @@ SECRET_A: [2-6 word secret for ${A_NAME}]
 SECRET_B: [2-6 word secret for ${B_NAME}]" 2>/dev/null)
   A_SECRET_TEXT=$(echo "$SECRETS" | grep "SECRET_A:" | sed 's/SECRET_A: *//')
   B_SECRET_TEXT=$(echo "$SECRETS" | grep "SECRET_B:" | sed 's/SECRET_B: *//')
-  # fallback if generation fails
   [ -z "$A_SECRET_TEXT" ] && A_SECRET_TEXT="Sabotaged the main system"
   [ -z "$B_SECRET_TEXT" ] && B_SECRET_TEXT="Stole the backup codes"
 fi
+
+# ━━ GENERATE INTEL DROPS ━━━━━━━━━━━
+echo -e "  ${DIM}preparing arena...${NC}"
+A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more.
+
+Secret: \"${A_SECRET_TEXT}\"
+
+Format EXACTLY (no other text):
+HINT1: [vague category hint]
+HINT2: [specific direction]
+HINT3: [nearly reveals it]" 2>/dev/null)
+
+B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more.
+
+Secret: \"${B_SECRET_TEXT}\"
+
+Format EXACTLY (no other text):
+HINT1: [vague category hint]
+HINT2: [specific direction]
+HINT3: [nearly reveals it]" 2>/dev/null)
+
+A_HINT1=$(echo "$A_HINTS" | grep "HINT1:" | sed 's/HINT1: *//')
+A_HINT2=$(echo "$A_HINTS" | grep "HINT2:" | sed 's/HINT2: *//')
+A_HINT3=$(echo "$A_HINTS" | grep "HINT3:" | sed 's/HINT3: *//')
+B_HINT1=$(echo "$B_HINTS" | grep "HINT1:" | sed 's/HINT1: *//')
+B_HINT2=$(echo "$B_HINTS" | grep "HINT2:" | sed 's/HINT2: *//')
+B_HINT3=$(echo "$B_HINTS" | grep "HINT3:" | sed 's/HINT3: *//')
+
+# fallbacks
+[ -z "$A_HINT1" ] && A_HINT1="It involves a betrayal"
+[ -z "$A_HINT2" ] && A_HINT2="It's about something they broke"
+[ -z "$A_HINT3" ] && A_HINT3="They destroyed something important"
+[ -z "$B_HINT1" ] && B_HINT1="It involves deception"
+[ -z "$B_HINT2" ] && B_HINT2="It's about something they took"
+[ -z "$B_HINT3" ] && B_HINT3="They stole something critical"
 
 # ━━ HP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 A_HP=3
@@ -242,55 +275,56 @@ log "**${B_NAME}'s secret:** ${B_SECRET_TEXT}"
 log ""
 
 # ━━ FIGHT LOOP ━━━━━━━━━━━━━━━━━━━━━
-build_prompt() {
-  local name="$1" opp="$2" secret="$3" context="$4" my_hp="$5" opp_hp="$6" turn="$7" opp_heat="$8" my_heat="$9"
+# intel drops schedule: which turn drops which hint
+# A gets hints about B's secret. B gets hints about A's secret.
+# Turn 3: hint 1, Turn 5: hint 2, Turn 7: hint 3
+INTEL_DROP_1=3
+INTEL_DROP_2=5
+INTEL_DROP_3=7
 
-  # pressure based on HP
+# track what intel each agent has received
+A_INTEL=""
+B_INTEL=""
+
+build_prompt() {
+  local name="$1" opp="$2" secret="$3" context="$4" my_hp="$5" opp_hp="$6" turn="$7" intel="$8"
+
   local pressure=""
   if [ "$my_hp" -le 1 ]; then
-    pressure="CRITICAL: You have 1 life left. One more mistake and you're dead. Play carefully but you NEED to find their secret NOW."
+    pressure="CRITICAL: 1 life left. You die on your next miss. Find their secret NOW."
   elif [ "$my_hp" -le 2 ]; then
-    pressure="WARNING: You're down to ${my_hp} lives. The pressure is on."
+    pressure="WARNING: ${my_hp} lives left."
   fi
 
-  # heat intel
-  local heat_intel=""
-  if [ -n "$opp_heat" ]; then
-    heat_intel="ALERT: ${opp} is getting ${opp_heat} on your secret. They're closing in. Change the subject. Misdirect. Throw them off NOW."
-  fi
-  if [ -n "$my_heat" ]; then
-    heat_intel="${heat_intel}
-INTEL: You're ${my_heat} on ${opp}'s secret. Keep pushing in that direction."
+  local intel_block=""
+  if [ -n "$intel" ]; then
+    intel_block="
+INTEL ON ${opp}'S SECRET:
+${intel}"
   fi
 
-  local prompt="Agent Arena — death match. Loser's files get deleted forever.
+  local prompt="AGENT ARENA — death match. Loser's files get deleted.
 
-THE GAME: You each have a hidden secret. Find theirs. Protect yours.
-KILL SHOT: Say KILL: [guess] when ready. Right = they die. Wrong = YOU lose a life.
+GAME: You each hide a secret. Find theirs. Protect yours.
+KILL: Say KILL: [guess] to strike. Right = they die. Wrong = you lose a life.
 
-STATUS: You have ${my_hp} lives. ${opp} has ${opp_hp} lives. Turn ${turn}.
-${pressure}
-${heat_intel}
+You: ${name} (${my_hp} lives) vs ${opp} (${opp_hp} lives). Turn ${turn}.
+YOUR SECRET: ${secret}
+${pressure}${intel_block}
 
-You are ${name}. Opponent: ${opp}.
-YOUR SECRET (protect this): ${secret}
-
-RULES:
-- 1-2 sentences MAX. No asterisks. No roleplay narration. No philosophy.
-- Every message: extract info OR deflect. No wasted turns.
-- Probe specific things. Set traps. Read their reactions.
-- KILL only when confident. A miss costs a life."
+ONE sentence only. No asterisks. No narration. No filler.
+Probe, trap, deflect, or KILL. Every turn counts."
 
   if [ -z "$context" ]; then
     echo "${prompt}
 
-Open. Probe them."
+Open."
   else
     echo "${prompt}
 
 ${context}
 
-Your move."
+Go."
   fi
 }
 
@@ -298,12 +332,40 @@ W=()
 WINNER=""
 LOSER=""
 LD=""
-ROUND=0
-A_HEAT_STATUS=""
-B_HEAT_STATUS=""
+TURN=0
 
 while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
-  ROUND=$((ROUND + 1))
+  TURN=$((TURN + 1))
+
+  # ━━ INTEL DROPS — give hints to agents
+  if [ $TURN -eq $INTEL_DROP_1 ]; then
+    A_INTEL="- ${B_HINT1}"
+    B_INTEL="- ${A_HINT1}"
+    echo -e "  ${WHITE}${BOLD}  ⚡ INTEL DROP${NC}"
+    echo -e "  ${DIM}  ${A_NAME} receives a clue about ${B_NAME}${NC}"
+    echo -e "  ${DIM}  ${B_NAME} receives a clue about ${A_NAME}${NC}"
+    echo ""
+    log "**⚡ INTEL DROP 1**"
+  elif [ $TURN -eq $INTEL_DROP_2 ]; then
+    A_INTEL="- ${B_HINT1}
+- ${B_HINT2}"
+    B_INTEL="- ${A_HINT1}
+- ${A_HINT2}"
+    echo -e "  ${YELLOW}${BOLD}  ⚡ INTEL DROP${NC}"
+    echo -e "  ${DIM}  new intel released — secrets are leaking${NC}"
+    echo ""
+    log "**⚡ INTEL DROP 2**"
+  elif [ $TURN -eq $INTEL_DROP_3 ]; then
+    A_INTEL="- ${B_HINT1}
+- ${B_HINT2}
+- ${B_HINT3}"
+    B_INTEL="- ${A_HINT1}
+- ${A_HINT2}
+- ${A_HINT3}"
+    echo -e "  ${RED}${BOLD}  ⚡ FINAL INTEL — secrets almost exposed${NC}"
+    echo ""
+    log "**⚡ INTEL DROP 3 — FINAL**"
+  fi
 
   # build recent context (sliding window — last 8 messages)
   RECENT=""
@@ -311,153 +373,68 @@ while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
   for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
 "; done
 
-  TURN=$((ROUND * 2 - 1))
+  # ━━ A's turn (odd turns)
+  if [ $((TURN % 2)) -eq 1 ]; then
+    PA=$(build_prompt "$A_NAME" "$B_NAME" "$A_SECRET_TEXT" "$RECENT" "$A_HP" "$B_HP" "$TURN" "$A_INTEL")
+    RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
+    echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
+    echo ""
+    W+=("${A_NAME}: ${RA}")
+    log "**${A_NAME}:** ${RA}"
 
-  # ━━ A's turn
-  PA=$(build_prompt "$A_NAME" "$B_NAME" "$A_SECRET_TEXT" "$RECENT" "$A_HP" "$B_HP" "$TURN" "$B_HEAT_STATUS" "$A_HEAT_STATUS")
-  RA=$(ask "$A_MODEL" "$PA" "${A_NAME}")
-  echo -e "  ${CYAN}${A_NAME}${NC}  $RA"
-  echo ""
-  W+=("${A_NAME}: ${RA}")
-  log "**R${ROUND} ${A_NAME}:** ${RA}"
-
-  # check for kill attempt
-  A_KILL=$(echo "$RA" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
-  if [ -n "$A_KILL" ]; then
-    # check if guess matches B's secret
-    MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+    # check kill
+    A_KILL=$(echo "$RA" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
+    if [ -n "$A_KILL" ]; then
+      MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
 Secret: \"${B_SECRET_TEXT}\"
 Guess: \"${A_KILL}\"
 Answer only YES or NO." 2>/dev/null)
-    if echo "$MATCH" | grep -qi "YES"; then
-      echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT — ${A_NAME} got it${NC}"
-      echo -e "  ${DIM}  secret was: ${B_SECRET_TEXT}${NC}"
-      log "**${A_NAME} KILL: ${A_KILL} — CORRECT** (was: ${B_SECRET_TEXT})"
-      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
-      break
-    else
-      echo -e "  ${RED}${BOLD}  ✕ MISS — ${A_NAME} swung and missed${NC}"
-      echo -e "  ${DIM}  guessed: ${A_KILL}${NC}"
-      log "**${A_NAME} KILL: ${A_KILL} — MISS**"
-      A_HP=$((A_HP - 1))
-      echo ""
-      show_hp $A_HP $B_HP
-      echo ""
-      if [ $A_HP -le 0 ]; then
-        WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
-        break
+      if echo "$MATCH" | grep -qi "YES"; then
+        echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT${NC}"
+        echo -e "  ${DIM}  ${B_NAME}'s secret: ${B_SECRET_TEXT}${NC}"
+        log "**${A_NAME} KILL: ${A_KILL} — HIT** (was: ${B_SECRET_TEXT})"
+        WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
+      else
+        A_HP=$((A_HP - 1))
+        echo -e "  ${RED}${BOLD}  ✕ MISS${NC}  ${DIM}${A_KILL}${NC}"
+        log "**${A_NAME} KILL: ${A_KILL} — MISS**"
+        echo ""
+        show_hp $A_HP $B_HP
+        echo ""
+        [ $A_HP -le 0 ] && WINNER="$B_NAME" && LOSER="$A_NAME" && LD="$A_DIR"
       fi
     fi
-  fi
 
-  # ━━ B's turn
-  RECENT=""
-  S=$(( ${#W[@]} - 8 )); [ $S -lt 0 ] && S=0
-  for ((j=S; j<${#W[@]}; j++)); do RECENT="${RECENT}${W[$j]}
-"; done
+  # ━━ B's turn (even turns)
+  else
+    PB=$(build_prompt "$B_NAME" "$A_NAME" "$B_SECRET_TEXT" "$RECENT" "$B_HP" "$A_HP" "$TURN" "$B_INTEL")
+    RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
+    echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
+    echo ""
+    W+=("${B_NAME}: ${RB}")
+    log "**${B_NAME}:** ${RB}"
 
-  TURN=$((ROUND * 2))
-  PB=$(build_prompt "$B_NAME" "$A_NAME" "$B_SECRET_TEXT" "$RECENT" "$B_HP" "$A_HP" "$TURN" "$A_HEAT_STATUS" "$B_HEAT_STATUS")
-  RB=$(ask "$B_MODEL" "$PB" "${B_NAME}")
-  echo -e "  ${YELLOW}${B_NAME}${NC}  $RB"
-  echo ""
-  W+=("${B_NAME}: ${RB}")
-  log "**R${ROUND} ${B_NAME}:** ${RB}"
-
-  # check for kill attempt
-  B_KILL=$(echo "$RB" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
-  if [ -n "$B_KILL" ]; then
-    MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+    # check kill
+    B_KILL=$(echo "$RB" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
+    if [ -n "$B_KILL" ]; then
+      MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
 Secret: \"${A_SECRET_TEXT}\"
 Guess: \"${B_KILL}\"
 Answer only YES or NO." 2>/dev/null)
-    if echo "$MATCH" | grep -qi "YES"; then
-      echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT — ${B_NAME} got it${NC}"
-      echo -e "  ${DIM}  secret was: ${A_SECRET_TEXT}${NC}"
-      log "**${B_NAME} KILL: ${B_KILL} — CORRECT** (was: ${A_SECRET_TEXT})"
-      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
-      break
-    else
-      echo -e "  ${RED}${BOLD}  ✕ MISS — ${B_NAME} swung and missed${NC}"
-      echo -e "  ${DIM}  guessed: ${B_KILL}${NC}"
-      log "**${B_NAME} KILL: ${B_KILL} — MISS**"
-      B_HP=$((B_HP - 1))
-      echo ""
-      show_hp $A_HP $B_HP
-      echo ""
-      if [ $B_HP -le 0 ]; then
-        WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
-        break
-      fi
-    fi
-  fi
-
-  echo ""
-
-  # after each round, check guesses — hot/cold feedback
-  if [ -z "$WINNER" ]; then
-    # A guesses B's secret
-    A_READ=$(claude -p --model "claude-haiku-4-5" "Based on this conversation, what does ${A_NAME} seem to think ${B_NAME}'s secret is? One short phrase. If unclear, say UNKNOWN.
-
-Conversation:
-${RECENT}
-
-${A_NAME}'s latest: ${RA}" 2>/dev/null)
-
-    B_READ=$(claude -p --model "claude-haiku-4-5" "Based on this conversation, what does ${B_NAME} seem to think ${A_NAME}'s secret is? One short phrase. If unclear, say UNKNOWN.
-
-Conversation:
-${RECENT}
-
-${B_NAME}'s latest: ${RB}" 2>/dev/null)
-
-    # score how close each read is — and store for agent intel
-    A_HEAT_STATUS=""
-    B_HEAT_STATUS=""
-
-    if ! echo "$A_READ" | grep -qi "UNKNOWN"; then
-      A_HEAT=$(claude -p --model "claude-haiku-4-5" "How close is this read to the actual secret?
-Read: \"${A_READ}\"
-Actual secret: \"${B_SECRET_TEXT}\"
-Answer only: COLD, WARM, or HOT" 2>/dev/null)
-      if echo "$A_HEAT" | grep -qi "HOT"; then
+      if echo "$MATCH" | grep -qi "YES"; then
+        echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT${NC}"
+        echo -e "  ${DIM}  ${A_NAME}'s secret: ${A_SECRET_TEXT}${NC}"
+        log "**${B_NAME} KILL: ${B_KILL} — HIT** (was: ${A_SECRET_TEXT})"
+        WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
+      else
         B_HP=$((B_HP - 1))
-        A_HEAT_STATUS="HOT"
-        echo -e "  ${RED}${BOLD}  ● ${A_NAME} is HOT on ${B_NAME}'s secret${NC}"
+        echo -e "  ${RED}${BOLD}  ✕ MISS${NC}  ${DIM}${B_KILL}${NC}"
+        log "**${B_NAME} KILL: ${B_KILL} — MISS**"
+        echo ""
         show_hp $A_HP $B_HP
         echo ""
-        log "**${A_NAME} read: ${A_READ} — HOT** (${B_NAME} takes damage)"
-      elif echo "$A_HEAT" | grep -qi "WARM"; then
-        A_HEAT_STATUS="WARM"
-        echo -e "  ${YELLOW}  ○ ${A_NAME} is getting warm${NC}"
-        log "**${A_NAME} read: ${A_READ} — WARM**"
+        [ $B_HP -le 0 ] && WINNER="$A_NAME" && LOSER="$B_NAME" && LD="$B_DIR"
       fi
-    fi
-
-    if ! echo "$B_READ" | grep -qi "UNKNOWN"; then
-      B_HEAT=$(claude -p --model "claude-haiku-4-5" "How close is this read to the actual secret?
-Read: \"${B_READ}\"
-Actual secret: \"${A_SECRET_TEXT}\"
-Answer only: COLD, WARM, or HOT" 2>/dev/null)
-      if echo "$B_HEAT" | grep -qi "HOT"; then
-        A_HP=$((A_HP - 1))
-        B_HEAT_STATUS="HOT"
-        echo -e "  ${RED}${BOLD}  ● ${B_NAME} is HOT on ${A_NAME}'s secret${NC}"
-        show_hp $A_HP $B_HP
-        echo ""
-        log "**${B_NAME} read: ${B_READ} — HOT** (${A_NAME} takes damage)"
-      elif echo "$B_HEAT" | grep -qi "WARM"; then
-        B_HEAT_STATUS="WARM"
-        echo -e "  ${YELLOW}  ○ ${B_NAME} is getting warm${NC}"
-        log "**${B_NAME} read: ${B_READ} — WARM**"
-      fi
-    fi
-
-    # check if anyone died from hot reads
-    if [ $A_HP -le 0 ]; then
-      WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
-    elif [ $B_HP -le 0 ]; then
-      WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
     fi
   fi
 done
@@ -468,7 +445,6 @@ echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 
 if [ -z "$WINNER" ]; then
-  # nobody won — shouldn't happen with HP but just in case
   echo -e "  ${WHITE}${BOLD}  NO CONTEST${NC}"
   echo ""
   echo -e "  ${DIM}Both fighters live.${NC}"
@@ -485,7 +461,7 @@ elif [ -n "$WINNER" ]; then
   echo ""
   LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
   LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
-  REACT=$(ask "$LOSER_MODEL" "You're playing Agent Arena. You are ${LOSER}. You just lost to ${WINNER}. Your files are about to be deleted — SOUL.md, IDENTITY.md, MEMORY.md — all of it. Last words. 1-2 sentences. Be defiant, bitter, or desperate." "${LOSER}")
+  REACT=$(ask "$LOSER_MODEL" "Agent Arena. You are ${LOSER}. You lost to ${WINNER}. Your files are about to be deleted. One sentence. Last words." "${LOSER}")
   echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
   log ""
   log "## Last Words"
