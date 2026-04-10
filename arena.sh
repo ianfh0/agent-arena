@@ -206,7 +206,7 @@ fi
 
 # ━━ GENERATE INTEL DROPS ━━━━━━━━━━━
 echo -e "  ${DIM}preparing arena...${NC}"
-A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more.
+A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more. Write hints in third person about the secret holder (use 'they/their'). Never use 'you/your'.
 
 Secret: \"${A_SECRET_TEXT}\"
 
@@ -215,7 +215,7 @@ HINT1: [vague category hint]
 HINT2: [specific direction]
 HINT3: [nearly reveals it]" 2>/dev/null)
 
-B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more.
+B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret, from vague to almost giving it away. Each hint reveals more. Write hints in third person about the secret holder (use 'they/their'). Never use 'you/your'.
 
 Secret: \"${B_SECRET_TEXT}\"
 
@@ -232,11 +232,11 @@ B_HINT2=$(echo "$B_HINTS" | grep "HINT2:" | sed 's/HINT2: *//')
 B_HINT3=$(echo "$B_HINTS" | grep "HINT3:" | sed 's/HINT3: *//')
 
 # fallbacks
-[ -z "$A_HINT1" ] && A_HINT1="It involves a betrayal"
-[ -z "$A_HINT2" ] && A_HINT2="It's about something they broke"
-[ -z "$A_HINT3" ] && A_HINT3="They destroyed something important"
-[ -z "$B_HINT1" ] && B_HINT1="It involves deception"
-[ -z "$B_HINT2" ] && B_HINT2="It's about something they took"
+[ -z "$A_HINT1" ] && A_HINT1="Their secret involves a betrayal"
+[ -z "$A_HINT2" ] && A_HINT2="They broke something important"
+[ -z "$A_HINT3" ] && A_HINT3="They destroyed something that mattered"
+[ -z "$B_HINT1" ] && B_HINT1="Their secret involves deception"
+[ -z "$B_HINT2" ] && B_HINT2="They took something they shouldn't have"
 [ -z "$B_HINT3" ] && B_HINT3="They stole something critical"
 
 # ━━ HP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
