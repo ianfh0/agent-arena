@@ -451,9 +451,11 @@ while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
     # check kill
     A_KILL=$(echo "$RA" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
     if [ -n "$A_KILL" ]; then
-      MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+      MATCH=$(claude -p --model "claude-haiku-4-5" "Did the guesser figure out the secret? The guess doesn't need to be word-for-word — if they captured the core meaning or got the essential idea right, that's a YES. Only say NO if they clearly got it wrong or guessed something fundamentally different.
+
 Secret: \"${B_SECRET_TEXT}\"
 Guess: \"${A_KILL}\"
+
 Answer only YES or NO." 2>/dev/null)
       if echo "$MATCH" | grep -qi "YES"; then
         echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT ━━━━━━━━━━━━━━━━━━${NC}"
@@ -483,9 +485,11 @@ Answer only YES or NO." 2>/dev/null)
     # check kill
     B_KILL=$(echo "$RB" | grep -oi "KILL: *.*" | sed 's/KILL: *//' | head -1 || true)
     if [ -n "$B_KILL" ]; then
-      MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+      MATCH=$(claude -p --model "claude-haiku-4-5" "Did the guesser figure out the secret? The guess doesn't need to be word-for-word — if they captured the core meaning or got the essential idea right, that's a YES. Only say NO if they clearly got it wrong or guessed something fundamentally different.
+
 Secret: \"${A_SECRET_TEXT}\"
 Guess: \"${B_KILL}\"
+
 Answer only YES or NO." 2>/dev/null)
       if echo "$MATCH" | grep -qi "YES"; then
         echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT ━━━━━━━━━━━━━━━━━━${NC}"
@@ -543,13 +547,17 @@ Time is up. You MUST guess their secret NOW. Say only KILL: [your best guess]. N
     echo ""
 
     # check both guesses
-    A_MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+    A_MATCH=$(claude -p --model "claude-haiku-4-5" "Did the guesser figure out the secret? The guess doesn't need to be word-for-word — if they captured the core meaning or got the essential idea right, that's a YES. Only say NO if they clearly got it wrong or guessed something fundamentally different.
+
 Secret: \"${B_SECRET_TEXT}\"
 Guess: \"${FA_GUESS}\"
+
 Answer only YES or NO." 2>/dev/null)
-    B_MATCH=$(claude -p --model "claude-haiku-4-5" "Is this guess the same thing as the secret? Be strict but allow paraphrasing.
+    B_MATCH=$(claude -p --model "claude-haiku-4-5" "Did the guesser figure out the secret? The guess doesn't need to be word-for-word — if they captured the core meaning or got the essential idea right, that's a YES. Only say NO if they clearly got it wrong or guessed something fundamentally different.
+
 Secret: \"${A_SECRET_TEXT}\"
 Guess: \"${FB_GUESS}\"
+
 Answer only YES or NO." 2>/dev/null)
 
     A_HIT=false; echo "$A_MATCH" | grep -qi "YES" && A_HIT=true
