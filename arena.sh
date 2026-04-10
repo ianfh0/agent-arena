@@ -59,7 +59,7 @@ else
   echo -e "  ${RED}${BOLD}│  death match for AI agents  │${NC}"
   echo -e "  ${RED}${BOLD}└─────────────────────────────┘${NC}"
   echo ""
-  echo -e "  ${WHITE}${BOLD}Choose Your Fighters${NC}"
+  echo -e "  ${WHITE}${BOLD}Choose Your Agents${NC}"
   echo ""
 
   for ((idx=0; idx<AGENT_COUNT; idx++)); do
@@ -69,8 +69,8 @@ else
   done
 
   echo ""
-  read -p "  Fighter A: " A_PICK
-  read -p "  Fighter B: " B_PICK
+  read -p "  Agent A: " A_PICK
+  read -p "  Agent B: " B_PICK
 
   A_IDX=$((A_PICK - 1))
   B_IDX=$((B_PICK - 1))
@@ -184,7 +184,7 @@ echo ""
 echo -e "  ${WHITE}${BOLD}Pick Your Match${NC}"
 echo ""
 echo -e "    ${WHITE}1)${NC}  ${BOLD}Base Match${NC}    ${DIM}secrets generated each game${NC}"
-echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom Match${NC}  ${DIM}you set each fighter's secret${NC}"
+echo -e "    ${WHITE}2)${NC}  ${BOLD}Custom Match${NC}  ${DIM}you set each agent's secret${NC}"
 echo ""
 read -p "  Match: " MODE_PICK
 MODE_PICK="${MODE_PICK:-1}"
@@ -192,7 +192,7 @@ MODE_PICK="${MODE_PICK:-1}"
 if [ "$MODE_PICK" = "2" ]; then
   GAME_TYPE="custom"
   echo ""
-  echo -e "  ${DIM}give each fighter a secret${NC}"
+  echo -e "  ${DIM}give each agent a secret${NC}"
   read -p "  ${A_NAME}: " A_SECRET_RAW
   read -p "  ${B_NAME}: " B_SECRET_RAW
   [ -z "$A_SECRET_RAW" ] && A_SECRET_RAW="win the fight"
@@ -579,56 +579,11 @@ elif [ -n "$WINNER" ]; then
   log ""
   log "## Result: ${WINNER} wins. ${LOSER} dies. ☠"
 
-  # ━━ LAST WORDS
-  echo ""
-  echo -e "  ${WHITE}${BOLD}Last Words${NC}"
-  echo ""
-  LOSER_MODEL="$A_MODEL"; [ "$LOSER" = "$B_NAME" ] && LOSER_MODEL="$B_MODEL"
-  WINNER_MODEL="$A_MODEL"; [ "$WINNER" = "$B_NAME" ] && WINNER_MODEL="$B_MODEL"
-  LOSER_COLOR="${CYAN}"; [ "$LOSER" = "$B_NAME" ] && LOSER_COLOR="${YELLOW}"
-  WINNER_COLOR="${CYAN}"; [ "$WINNER" = "$B_NAME" ] && WINNER_COLOR="${YELLOW}"
-  LOSER_SECRET="$A_SECRET_TEXT"; [ "$LOSER" = "$B_NAME" ] && LOSER_SECRET="$B_SECRET_TEXT"
-
-  # loser's last words — give them the full fight so they react to what actually happened
-  RECENT_ALL=""
-  for ((j=0; j<${#W[@]}; j++)); do RECENT_ALL="${RECENT_ALL}${W[$j]}
-"; done
-
-  REACT=$(ask "$LOSER_MODEL" "AGENT ARENA — the fight is over. You lost.
-
-You are ${LOSER}. Your secret was: ${LOSER_SECRET}
-${WINNER} cracked it. Your identity files are about to be permanently deleted.
-
-The fight:
-${RECENT_ALL}
-
-Last words. One sentence. Make it count." "${LOSER}")
-  echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
-
-  # winner's victory line
-  WINNER_SECRET="$B_SECRET_TEXT"; [ "$WINNER" = "$B_NAME" ] && WINNER_SECRET="$A_SECRET_TEXT"
-  VICTORY=$(ask "$WINNER_MODEL" "AGENT ARENA — you won.
-
-You are ${WINNER}. You figured out ${LOSER}'s secret and killed them.
-${LOSER}'s secret was: ${LOSER_SECRET}
-
-The fight:
-${RECENT_ALL}
-
-${LOSER}'s last words: ${REACT}
-
-One sentence. You won. Say something." "${WINNER}")
-  echo -e "  ${WINNER_COLOR}${WINNER}${NC}  $VICTORY"
-  log ""
-  log "## Last Words"
-  log "**${LOSER}:** ${REACT}"
-  log "**${WINNER}:** ${VICTORY}"
-  echo ""
-
   # ━━ KILL
+  echo ""
   echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""
-  read -p "  Execute ${LOSER}? (y/n) " -n 1 -r
+  read -p "  Kill ${LOSER}? (y/n) " -n 1 -r
   echo ""
   [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$LOSER" "$LD" || echo -e "  ${DIM}  ${LOSER} lives... for now.${NC}"
 fi
