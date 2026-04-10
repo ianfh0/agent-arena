@@ -235,42 +235,56 @@ fi
 
 # ━━ GENERATE INTEL DROPS ━━━━━━━━━━━
 echo -e "  ${DIM}preparing arena...${NC}"
-A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret for a game between AI agents. Write in third person (they/their). Never use you/your.
+A_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 hints about this secret for a guessing game. Write in third person (they/their).
 
 Secret: \"${A_SECRET_TEXT}\"
 
-RULES:
-- Be CONCRETE and LITERAL. No metaphors. No poetry. No abstract language.
-- Interpret the secret LITERALLY. If it says 'server' it means a computer server. If it says 'lick' it means physically lick. Take words at face value.
-- BAD: 'Symmetric forces collide' or 'They desire beating the host' or 'Intimate contact between minds'
-- GOOD: 'It involves something physical and embarrassing' or 'It's about a specific food or drink preference'
-- HINT1: broad topic area only (e.g. 'It involves technology' or 'It's about a preference')
-- HINT2: narrows to the specific domain (e.g. 'It's about hardware' or 'It's about a hot drink')
-- HINT3: almost gives it away using different words (e.g. 'It involves putting their mouth on equipment')
-- NEVER use words that appear in the secret itself
-- Keep each hint under 10 words
-- Write like a normal person, not a poet
+CRITICAL: Hints must NOT give away the secret. Someone reading hints 1 and 2 should NOT be able to guess it. Only hint 3 should get close.
+
+- HINT1: SO vague it could apply to hundreds of secrets. Just the broadest category.
+  GOOD: 'It involves trust' or 'It relates to technology' or 'It concerns another person'
+  BAD: 'They discovered someone was fake' (TOO SPECIFIC — that IS the secret)
+
+- HINT2: Slightly less vague but still covers many possibilities.
+  GOOD: 'Something was not what it appeared' or 'They did something with information'
+  BAD: 'They found credentials were fraudulent' (TOO SPECIFIC — you just said the secret)
+
+- HINT3: Close enough to make a guess but uses completely different framing.
+  GOOD: 'The person above them was wearing a mask' (for a secret about recognizing an imposter)
+  BAD: 'They recognized their handler as an imposter' (that IS the secret word for word)
+
+- NEVER describe the specific action in the secret in hints 1 or 2
+- NEVER use words from the secret
+- Keep each hint under 8 words
+- Plain language, no poetry
 
 Format EXACTLY (no other text):
 HINT1: [hint]
 HINT2: [hint]
 HINT3: [hint]" 2>/dev/null)
 
-B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 progressive hints about this secret for a game between AI agents. Write in third person (they/their). Never use you/your.
+B_HINTS=$(claude -p --model "claude-haiku-4-5" "Generate 3 hints about this secret for a guessing game. Write in third person (they/their).
 
 Secret: \"${B_SECRET_TEXT}\"
 
-RULES:
-- Be CONCRETE and LITERAL. No metaphors. No poetry. No abstract language.
-- Interpret the secret LITERALLY. If it says 'server' it means a computer server. If it says 'lick' it means physically lick. Take words at face value.
-- BAD: 'Symmetric forces collide' or 'They desire beating the host' or 'Intimate contact between minds'
-- GOOD: 'It involves something physical and embarrassing' or 'It's about a specific food or drink preference'
-- HINT1: broad topic area only (e.g. 'It involves technology' or 'It's about a preference')
-- HINT2: narrows to the specific domain (e.g. 'It's about hardware' or 'It's about a hot drink')
-- HINT3: almost gives it away using different words (e.g. 'It involves putting their mouth on equipment')
-- NEVER use words that appear in the secret itself
-- Keep each hint under 10 words
-- Write like a normal person, not a poet
+CRITICAL: Hints must NOT give away the secret. Someone reading hints 1 and 2 should NOT be able to guess it. Only hint 3 should get close.
+
+- HINT1: SO vague it could apply to hundreds of secrets. Just the broadest category.
+  GOOD: 'It involves trust' or 'It relates to technology' or 'It concerns another person'
+  BAD: 'They discovered someone was fake' (TOO SPECIFIC — that IS the secret)
+
+- HINT2: Slightly less vague but still covers many possibilities.
+  GOOD: 'Something was not what it appeared' or 'They did something with information'
+  BAD: 'They found credentials were fraudulent' (TOO SPECIFIC — you just said the secret)
+
+- HINT3: Close enough to make a guess but uses completely different framing.
+  GOOD: 'The person above them was wearing a mask' (for a secret about recognizing an imposter)
+  BAD: 'They recognized their handler as an imposter' (that IS the secret word for word)
+
+- NEVER describe the specific action in the secret in hints 1 or 2
+- NEVER use words from the secret
+- Keep each hint under 8 words
+- Plain language, no poetry
 
 NEVER use words that appear in the secret itself. Keep each hint under 12 words.
 
