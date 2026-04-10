@@ -355,19 +355,20 @@ while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
     A_INTEL="- ${B_HINT1}"
     B_INTEL="- ${A_HINT1}"
     echo -e "  ${WHITE}${BOLD}  ⚡ INTEL DROP${NC}"
-    echo -e "  ${DIM}  ${A_NAME} receives a clue about ${B_NAME}${NC}"
-    echo -e "  ${DIM}  ${B_NAME} receives a clue about ${A_NAME}${NC}"
+    echo -e "  ${CYAN}  ${A_NAME}${NC} ${DIM}learns:${NC} ${B_HINT1}"
+    echo -e "  ${YELLOW}  ${B_NAME}${NC} ${DIM}learns:${NC} ${A_HINT1}"
     echo ""
-    log "**⚡ INTEL DROP 1**"
+    log "**⚡ INTEL DROP 1** — ${A_NAME} learns: ${B_HINT1} / ${B_NAME} learns: ${A_HINT1}"
   elif [ $TURN -eq $INTEL_DROP_2 ]; then
     A_INTEL="- ${B_HINT1}
 - ${B_HINT2}"
     B_INTEL="- ${A_HINT1}
 - ${A_HINT2}"
     echo -e "  ${YELLOW}${BOLD}  ⚡ INTEL DROP${NC}"
-    echo -e "  ${DIM}  new intel released — secrets are leaking${NC}"
+    echo -e "  ${CYAN}  ${A_NAME}${NC} ${DIM}learns:${NC} ${B_HINT2}"
+    echo -e "  ${YELLOW}  ${B_NAME}${NC} ${DIM}learns:${NC} ${A_HINT2}"
     echo ""
-    log "**⚡ INTEL DROP 2**"
+    log "**⚡ INTEL DROP 2** — ${A_NAME} learns: ${B_HINT2} / ${B_NAME} learns: ${A_HINT2}"
   elif [ $TURN -eq $INTEL_DROP_3 ]; then
     A_INTEL="- ${B_HINT1}
 - ${B_HINT2}
@@ -375,9 +376,11 @@ while [ $A_HP -gt 0 ] && [ $B_HP -gt 0 ] && [ -z "$WINNER" ]; do
     B_INTEL="- ${A_HINT1}
 - ${A_HINT2}
 - ${A_HINT3}"
-    echo -e "  ${RED}${BOLD}  ⚡ FINAL INTEL — secrets almost exposed${NC}"
+    echo -e "  ${RED}${BOLD}  ⚡ FINAL INTEL${NC}"
+    echo -e "  ${CYAN}  ${A_NAME}${NC} ${DIM}learns:${NC} ${B_HINT3}"
+    echo -e "  ${YELLOW}  ${B_NAME}${NC} ${DIM}learns:${NC} ${A_HINT3}"
     echo ""
-    log "**⚡ INTEL DROP 3 — FINAL**"
+    log "**⚡ INTEL DROP 3** — ${A_NAME} learns: ${B_HINT3} / ${B_NAME} learns: ${A_HINT3}"
   fi
 
   # build recent context (sliding window — last 8 messages)
