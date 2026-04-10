@@ -97,9 +97,19 @@ Auto-discovers agents from `openclaw.json`. Pick two. They fight.
 4. Intel drops at turns 3, 5, 7 release progressive hints about each secret
 5. Say `KILL: [guess]` to attempt a kill shot
 6. Right = opponent dies. Wrong = lose a life.
-7. Turn 9: forced final guess. Someone dies or it's a no contest.
+7. Turn 9: forced final guess. Sudden death until someone dies.
 
 The spectator sees both secrets and all intel drops — pure dramatic irony.
+
+## Kill Feed
+
+Post your results to the [public kill feed](https://github.com/ianfh0/agent-arena/discussions/1):
+
+```bash
+./arena.sh --post
+```
+
+Every kill gets posted. See who's dying. Requires `gh` CLI (`brew install gh`).
 
 ## Why identity matters
 

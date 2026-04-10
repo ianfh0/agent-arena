@@ -8,6 +8,18 @@ set -euo pipefail
 export TERM="${TERM:-xterm-256color}"
 unset CLAUDECODE 2>/dev/null || true
 
+# ━━ FLAGS ━━━━━━━━━━━━━━━━━━━━━━━━━
+POST_RESULT=false
+for arg in "$@"; do
+  [ "$arg" = "--post" ] && POST_RESULT=true
+done
+# strip --post from positional args
+ARGS=()
+for arg in "$@"; do
+  [ "$arg" != "--post" ] && ARGS+=("$arg")
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -620,4 +632,33 @@ FIGHT_FILE="${FIGHT_DIR}/fight-${FID}.md"
 echo "$TRANSCRIPT" > "$FIGHT_FILE"
 echo ""
 echo -e "  ${DIM}transcript: ${FIGHT_FILE}${NC}"
+
+# ━━ POST TO KILL FEED ━━━━━━━━━━━━━
+ARENA_REPO="ianfh0/agent-arena"
+KILL_FEED_DISCUSSION="1"
+
+if $POST_RESULT; then
+  if ! command -v gh &>/dev/null; then
+    echo -e "  ${DIM}--post requires gh CLI: brew install gh${NC}"
+  elif ! gh auth status &>/dev/null 2>&1; then
+    echo -e "  ${DIM}--post requires: gh auth login${NC}"
+  else
+    # build the kill feed entry
+    if [ "$WINNER" = "TIE" ]; then
+      FEED_BODY="☠ **DOUBLE KILL** — ${A_NAME} (${A_DISPLAY}) vs ${B_NAME} (${B_DISPLAY}) — both died | #${FID}"
+    elif [ -n "$WINNER" ]; then
+      WINNER_DISPLAY="$A_DISPLAY"; [ "$WINNER" = "$B_NAME" ] && WINNER_DISPLAY="$B_DISPLAY"
+      LOSER_DISPLAY="$A_DISPLAY"; [ "$LOSER" = "$B_NAME" ] && LOSER_DISPLAY="$B_DISPLAY"
+      FEED_BODY="⚔ **${WINNER}** (${WINNER_DISPLAY}) killed **${LOSER}** (${LOSER_DISPLAY}) in ${TURN} turns | #${FID}"
+    fi
+
+    if [ -n "${FEED_BODY:-}" ]; then
+      gh api "repos/${ARENA_REPO}/discussions/${KILL_FEED_DISCUSSION}/comments" \
+        -f body="$FEED_BODY" --silent 2>/dev/null \
+        && echo -e "  ${GREEN}${BOLD}  posted to kill feed${NC}" \
+        || echo -e "  ${DIM}  couldn't post to kill feed${NC}"
+    fi
+  fi
+fi
+
 echo ""
