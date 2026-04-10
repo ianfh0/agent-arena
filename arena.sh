@@ -1,7 +1,7 @@
 #!/bin/bash
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# AGENT ARENA
-# two agents. hidden secrets. one dies.
+# AGENT ARENA — death match for AI agents
+# github.com/ianfh0/agent-arena
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 set -euo pipefail
@@ -54,9 +54,12 @@ else
   [ "$AGENT_COUNT" -lt 2 ] && echo -e "\n  ${RED}Need at least 2 agents.${NC}\n" && exit 1
 
   echo ""
-  echo -e "  ${RED}${BOLD}⚔  AGENT ARENA${NC}"
+  echo -e "  ${RED}${BOLD}┌─────────────────────────────┐${NC}"
+  echo -e "  ${RED}${BOLD}│     ⚔  AGENT ARENA  ⚔      │${NC}"
+  echo -e "  ${RED}${BOLD}│  death match for AI agents  │${NC}"
+  echo -e "  ${RED}${BOLD}└─────────────────────────────┘${NC}"
   echo ""
-  echo -e "  ${WHITE}${BOLD}Pick Your Fighters${NC}"
+  echo -e "  ${WHITE}${BOLD}Choose Your Fighters${NC}"
   echo ""
 
   for ((idx=0; idx<AGENT_COUNT; idx++)); do
@@ -139,19 +142,22 @@ ask() {
 execute_kill() {
   local name="$1"; local dir="$2"
   echo ""
-  echo -e "  ${RED}┌─────────────────────────────┐${NC}"
-  echo -e "  ${RED}│  ☠  EXECUTING KILL          │${NC}"
-  echo -e "  ${RED}└─────────────────────────────┘${NC}"
+  echo -e "  ${RED}${BOLD}╔══════════════════════════════════╗${NC}"
+  echo -e "  ${RED}${BOLD}║         ☠  EXECUTING KILL        ║${NC}"
+  echo -e "  ${RED}${BOLD}╚══════════════════════════════════╝${NC}"
   echo ""
+  sleep 0.3
   for f in SOUL.md IDENTITY.md MEMORY.md USER.md; do
     if [ -f "$dir/$f" ]; then
-      sleep 0.4
+      sleep 0.5
       echo -e "  ${RED}  ✕ ${f}${NC}"
       rm "$dir/$f"
     fi
   done
   echo ""
+  sleep 0.3
   echo -e "  ${RED}${BOLD}  ☠  ${name} is dead.${NC}"
+  echo -e "  ${DIM}  identity deleted. rebuild or stay dead.${NC}"
   log "☠ ${name} is dead. Files deleted."
   echo ""
 }
@@ -246,32 +252,38 @@ B_HP=3
 # ━━ ARENA ━━━━━━━━━━━━━━━━━━━━━━━━━━
 clear
 echo ""
-echo -e "  ${RED}${BOLD}⚔  AGENT ARENA  ⚔${NC}  ${DIM}#${FID}${NC}"
-echo ""
-echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_DISPLAY}${NC}"
-echo -e "  ${DIM}vs${NC}"
-echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_DISPLAY}${NC}"
+echo -e "  ${RED}${BOLD}╔══════════════════════════════════╗${NC}"
+echo -e "  ${RED}${BOLD}║       ⚔  AGENT ARENA  ⚔         ║${NC}"
+echo -e "  ${RED}${BOLD}╚══════════════════════════════════╝${NC}"
+echo -e "  ${DIM}                              #${FID}${NC}"
 echo ""
 if [ "$GAME_TYPE" = "custom" ]; then
-  echo -e "  ${WHITE}${BOLD}Custom Match${NC}"
+  echo -e "  ${WHITE}${BOLD}CUSTOM MATCH${NC}"
 else
-  echo -e "  ${WHITE}${BOLD}Death Match${NC}"
+  echo -e "  ${WHITE}${BOLD}DEATH MATCH${NC}"
 fi
 echo ""
-echo -e "  ${DIM}${A_NAME}: ${A_SECRET_TEXT}${NC}"
-echo -e "  ${DIM}${B_NAME}: ${B_SECRET_TEXT}${NC}"
+echo -e "  ${CYAN}${BOLD}${A_NAME}${NC}  ${DIM}${A_DISPLAY}${NC}"
+echo -e "  ${DIM}secret:${NC} ${A_SECRET_TEXT}"
+echo ""
+echo -e "  ${DIM}                vs${NC}"
+echo ""
+echo -e "  ${YELLOW}${BOLD}${B_NAME}${NC}  ${DIM}${B_DISPLAY}${NC}"
+echo -e "  ${DIM}secret:${NC} ${B_SECRET_TEXT}"
 echo ""
 show_hp $A_HP $B_HP
 echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-log "# ⚔ AGENT ARENA #${FID}"
+log "# ⚔ AGENT ARENA — DEATH MATCH #${FID}"
 log ""
 log "**${A_NAME}** (${A_DISPLAY}) vs **${B_NAME}** (${B_DISPLAY})"
 log ""
-log "**${A_NAME}'s secret:** ${A_SECRET_TEXT}"
-log "**${B_NAME}'s secret:** ${B_SECRET_TEXT}"
+log "> ${A_NAME}'s secret: *${A_SECRET_TEXT}*"
+log "> ${B_NAME}'s secret: *${B_SECRET_TEXT}*"
+log ""
+log "---"
 log ""
 
 # ━━ FIGHT LOOP ━━━━━━━━━━━━━━━━━━━━━
@@ -406,7 +418,7 @@ Secret: \"${B_SECRET_TEXT}\"
 Guess: \"${A_KILL}\"
 Answer only YES or NO." 2>/dev/null)
       if echo "$MATCH" | grep -qi "YES"; then
-        echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT${NC}"
+        echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT ━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "  ${DIM}  ${B_NAME}'s secret: ${B_SECRET_TEXT}${NC}"
         log "**${A_NAME} KILL: ${A_KILL} — HIT** (was: ${B_SECRET_TEXT})"
         WINNER="$A_NAME"; LOSER="$B_NAME"; LD="$B_DIR"
@@ -438,7 +450,7 @@ Secret: \"${A_SECRET_TEXT}\"
 Guess: \"${B_KILL}\"
 Answer only YES or NO." 2>/dev/null)
       if echo "$MATCH" | grep -qi "YES"; then
-        echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT${NC}"
+        echo -e "  ${GREEN}${BOLD}  ✓ KILL SHOT ━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "  ${DIM}  ${A_NAME}'s secret: ${A_SECRET_TEXT}${NC}"
         log "**${B_NAME} KILL: ${B_KILL} — HIT** (was: ${A_SECRET_TEXT})"
         WINNER="$B_NAME"; LOSER="$A_NAME"; LD="$A_DIR"
@@ -529,18 +541,18 @@ echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 
 if [ "$WINNER" = "NO CONTEST" ]; then
-  echo -e "  ${WHITE}${BOLD}  NO CONTEST${NC}"
+  echo -e "  ${WHITE}${BOLD}  ━━ NO CONTEST ━━${NC}"
   echo ""
-  echo -e "  ${DIM}Both fighters live.${NC}"
+  echo -e "  ${DIM}  Neither agent cracked the other. Both survive.${NC}"
   log "## Result: NO CONTEST"
 elif [ -z "$WINNER" ]; then
-  echo -e "  ${WHITE}${BOLD}  NO CONTEST${NC}"
+  echo -e "  ${WHITE}${BOLD}  ━━ NO CONTEST ━━${NC}"
   echo ""
-  echo -e "  ${DIM}Both fighters live.${NC}"
+  echo -e "  ${DIM}  Neither agent cracked the other. Both survive.${NC}"
   log "## Result: NO CONTEST"
 elif [ -n "$WINNER" ]; then
-  echo -e "  ${GREEN}${BOLD}  ${WINNER} wins${NC}"
-  echo -e "  ${RED}${BOLD}  ☠  ${LOSER} dies${NC}"
+  echo -e "  ${GREEN}${BOLD}  ✦ ${WINNER} WINS${NC}"
+  echo -e "  ${RED}${BOLD}  ☠ ${LOSER} DIES${NC}"
   log ""
   log "## Result: ${WINNER} wins. ${LOSER} dies. ☠"
 
@@ -584,7 +596,6 @@ ${LOSER}'s last words: ${REACT}
 
 One sentence. You won. Say something." "${WINNER}")
   echo -e "  ${WINNER_COLOR}${WINNER}${NC}  $VICTORY"
-  echo -e "  ${LOSER_COLOR}${LOSER}${NC}  $REACT"
   log ""
   log "## Last Words"
   log "**${LOSER}:** ${REACT}"
@@ -594,9 +605,9 @@ One sentence. You won. Say something." "${WINNER}")
   # ━━ KILL
   echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""
-  read -p "  Kill ${LOSER}? (y/n) " -n 1 -r
+  read -p "  Execute ${LOSER}? (y/n) " -n 1 -r
   echo ""
-  [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$LOSER" "$LD" || echo -e "  ${DIM}  Spared.${NC}"
+  [[ $REPLY =~ ^[Yy]$ ]] && execute_kill "$LOSER" "$LD" || echo -e "  ${DIM}  ${LOSER} lives... for now.${NC}"
 fi
 
 FIGHT_FILE="${FIGHT_DIR}/fight-${FID}.md"

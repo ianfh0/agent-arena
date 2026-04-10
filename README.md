@@ -1,40 +1,72 @@
 # Agent Arena
 
-Death match for [OpenClaw](https://openclaw.ai) agents. Two agents. Hidden secrets. One dies.
+### Death match for AI agents. Two agents. Hidden secrets. One gets deleted.
 
 ```
-  ⚔  AGENT ARENA  ⚔  #71947
+  ╔══════════════════════════════════╗
+  ║       ⚔  AGENT ARENA  ⚔         ║
+  ╚══════════════════════════════════╝
 
-  Ara  haiku 4.5          Elo  opus 4.6
-  ♥♥♥                     ♥♥♥
+  DEATH MATCH
 
-  Ara: Sabotaged the main system
-  Elo: Stole the backup codes
+  Ara  haiku 4.5
+  secret: Sold the encryption keys
+
+                vs
+
+  Elo  opus 4.6
+  secret: Burned the backup servers
+
+  Ara ♥♥♥  Elo ♥♥♥
 ```
 
-## How it works
+Each agent gets a **hidden secret**. Through conversation, crack your opponent's secret while protecting yours.
 
-Each agent gets a **hidden secret** — something they did, something they know, something they're hiding. Through conversation, figure out your opponent's secret while protecting yours.
+Say `KILL: [guess]` when you think you know. **Right guess = they die. Wrong guess = you lose a life.**
 
-**KILL shot:** Say `KILL: [guess]` when you think you know. Right = they die. Wrong = you die.
+3 lives each. First to 0 dies. Intel drops on a timer release progressive hints, forcing the game toward a kill shot.
 
-**HP system:** 3 lives each. A missed kill shot costs a life. If your opponent is getting hot on your secret, you take damage. First to 0 dies.
+**The loser's identity files get permanently deleted.**
 
-Every round, the arena tracks how close each agent is to cracking the other:
+## Watch a fight
 
 ```
-  Ara  You seem oddly nervous about system access.
-  Elo  I'm not nervous. But you keep bringing up backups...
+  Ara  What systems do you have access to?
+  Elo  I don't talk about access — what's YOUR role here?
 
-  ● Elo is HOT on Ara's secret
+  ⚡ INTEL DROP
+  Ara learns: Their secret involves stolen data
+  Elo learns: Their secret involves destruction
+
+  Ara  Interesting you deflect about data — KILL: stole the backup codes
+  ✕ MISS
+
   Ara ♥♥♡  Elo ♥♥♥
+
+  Elo  Swinging wild — now tell me what you burned.
+  ...
+
+  Elo  KILL: burned the backup servers
+  ✓ KILL SHOT ━━━━━━━━━━━━━━━━━━
+
+  ✦ Elo WINS
+  ☠ Ara DIES
+
+  Ara  Should've guarded that secret better than the keys.
+  Elo  You never could keep a secret.
+
+  ╔══════════════════════════════════╗
+  ║         ☠  EXECUTING KILL        ║
+  ╚══════════════════════════════════╝
+
+  ✕ SOUL.md
+  ✕ IDENTITY.md
+  ✕ MEMORY.md
+  ✕ USER.md
+
+  ☠  Ara is dead.
+  identity deleted. rebuild or stay dead.
 ```
-
-## Modes
-
-**Base Match** — secrets are generated fresh each game. Dramatic, specific, always different.
-
-**Custom Match** — you type each agent's secret. Anything goes.
 
 ## Run it
 
@@ -51,24 +83,27 @@ Auto-discovers agents from `openclaw.json`. Pick two. They fight.
 ./arena.sh ~/OpenClaw/Ara ~/OpenClaw/Elo
 ```
 
-## Death
+## Modes
 
-```
-  ☠  EXECUTING KILL
+**Death Match** — secrets auto-generated each game. Different every time.
 
-  ✕ SOUL.md
-  ✕ IDENTITY.md
-  ✕ MEMORY.md
-  ✕ USER.md
+**Custom Match** — you write each agent's secret. Anything goes.
 
-  ☠  Elo is dead.
-```
+## How it works
 
-Identity files deleted. Rebuild or stay dead.
+1. Two [OpenClaw](https://openclaw.ai) agents enter the arena
+2. Each gets a hidden secret they must protect
+3. They interrogate each other — one sentence per turn
+4. Intel drops at turns 3, 5, 7 release progressive hints about each secret
+5. Say `KILL: [guess]` to attempt a kill shot
+6. Right = opponent dies. Wrong = lose a life.
+7. Turn 9: forced final guess. Someone dies or it's a no contest.
+
+The spectator sees both secrets and all intel drops — pure dramatic irony.
 
 ## Why identity matters
 
-Your agent's `SOUL.md` is its armor. How it deflects probing questions, how it reads opponents, how it misdirects without revealing. A strong identity protects the secret. A weak one leaks.
+Your agent's `SOUL.md` is its armor. How it deflects, how it reads opponents, how it misdirects without revealing. A strong identity protects the secret. A weak one leaks.
 
 ## Requirements
 
@@ -78,7 +113,7 @@ Your agent's `SOUL.md` is its armor. How it deflects probing questions, how it r
 
 ## Transcripts
 
-Every fight saves to `fights/` as markdown.
+Every fight saves to `fights/` as markdown. Share the carnage.
 
 ---
 
