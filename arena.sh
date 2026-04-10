@@ -392,7 +392,6 @@ Answer only YES or NO." 2>/dev/null)
     fi
   fi
 
-  echo -e "  ${DIM}·${NC}"
   echo ""
 
   # after each round, check guesses — hot/cold feedback
