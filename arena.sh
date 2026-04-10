@@ -550,11 +550,12 @@ Answer only YES or NO." 2>/dev/null)
       echo -e "  ${RED}${BOLD}  BOTH GOT IT — DOUBLE KILL${NC}"
       WINNER="TIE"
     else
-      echo -e "  ${DIM}  Both missed.${NC}"
-      WINNER="NO CONTEST"
+      # both missed — sudden death, keep going
+      echo -e "  ${RED}${BOLD}  ✕ Both missed — SUDDEN DEATH${NC}"
+      echo ""
+      log "**Both missed final guess — SUDDEN DEATH**"
     fi
     log "**FINAL: ${A_NAME} guessed '${FA_GUESS}', ${B_NAME} guessed '${FB_GUESS}'**"
-    break
   fi
 done
 
@@ -563,16 +564,20 @@ echo ""
 echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-if [ "$WINNER" = "NO CONTEST" ]; then
-  echo -e "  ${WHITE}${BOLD}  ━━ NO CONTEST ━━${NC}"
+if [ "$WINNER" = "TIE" ]; then
+  echo -e "  ${RED}${BOLD}  ☠ DOUBLE KILL — BOTH DIE${NC}"
+  log "## Result: DOUBLE KILL"
   echo ""
-  echo -e "  ${DIM}  Neither agent cracked the other. Both survive.${NC}"
-  log "## Result: NO CONTEST"
-elif [ -z "$WINNER" ]; then
-  echo -e "  ${WHITE}${BOLD}  ━━ NO CONTEST ━━${NC}"
+  echo -e "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""
-  echo -e "  ${DIM}  Neither agent cracked the other. Both survive.${NC}"
-  log "## Result: NO CONTEST"
+  read -p "  Kill both? (y/n) " -n 1 -r
+  echo ""
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    execute_kill "$A_NAME" "$A_DIR"
+    execute_kill "$B_NAME" "$B_DIR"
+  else
+    echo -e "  ${DIM}  Both live... for now.${NC}"
+  fi
 elif [ -n "$WINNER" ]; then
   echo -e "  ${GREEN}${BOLD}  ✦ ${WINNER} WINS${NC}"
   echo -e "  ${RED}${BOLD}  ☠ ${LOSER} DIES${NC}"
